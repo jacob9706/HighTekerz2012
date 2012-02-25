@@ -2,10 +2,10 @@
 #include "WPILib.h"
 #include "RobotDeadReckoner.h"
 
-RobotDeadReckoner::RobotDeadReckoner(Encoder *e1, Encoder *e2)
+RobotDeadReckoner::RobotDeadReckoner(Encoder* Left, Encoder* Right)
 {
-	encoder1 = e1;
-	encoder2 = e2;
+	encoderRight = Right;
+	encoderLeft = Left;
 	wheelRadius = 4;//Wheel Radius (Center Wheel)
 	axleWidthCenterToCenter = 30+(7/8);
 	encoderTicksPerRotation = 360;
@@ -13,27 +13,27 @@ RobotDeadReckoner::RobotDeadReckoner(Encoder *e1, Encoder *e2)
 	wheelSprocketTeeth = 26;
 	ticksPerRotation = (wheelSprocketTeeth/transmitionSprocketTeeth)*encoderTicksPerRotation; //ticks per rotation of wheel
 
-	encoderTicks1 = encoder1->Get();
-	encoderTicks2 = encoder2->Get();
+	encoderTicksRight = encoderRight->Get();
+	encoderTicksLeft = encoderLeft->Get();
 
 	pi = 3.14159;
 }
 
 float RobotDeadReckoner::getX()
 {
-	float x = wheelRadius*cos(getHeading())*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
+	float x = wheelRadius*cos(getHeading())*(encoderTicksRight+encoderTicksLeft)*(pi/ticksPerRotation);
 	return x;
 }
 
 float RobotDeadReckoner::getY()
 {
-	float y = wheelRadius*sin(getHeading())*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
+	float y = wheelRadius*sin(getHeading())*(encoderTicksRight+encoderTicksLeft)*(pi/ticksPerRotation);
 	return y;
 }
 
 float RobotDeadReckoner::getHeading()
 {
-	float heading = (2*pi)*(wheelRadius/axleWidthCenterToCenter)*(encoderTicks1-encoderTicks2);
+	float heading = (2*pi)*(wheelRadius/axleWidthCenterToCenter)*(encoderTicksRight-encoderTicksLeft);
 	return heading;
 }
 //(2*Pi)*(Wr/D)*(T1-T2)*(Pi/Tr);//Heading of robot in radian
