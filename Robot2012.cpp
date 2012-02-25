@@ -210,7 +210,7 @@ public:
 			if (shooterState)
 			{
 				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
-				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(1)*-1);
+				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2)*-1);
 			}
 			else
 			{
@@ -282,15 +282,14 @@ public:
 			
 			
 			// random output stuff!! ////////////
-			printf("lft: %d  ", encoderWheelsLeft->Get());
+/*			printf("lft: %d  ", encoderWheelsLeft->Get());
 			printf("rt: %d  ", encoderWheelsRight->Get());			
 			printf("turret: %d  ", encoderTurretRotation->Get());
 			printf("top enc: %d  ", bBallShooterTopEncoder->Get());			
 			printf("bottom enc: %d  ", bBallShooterBottomEncoder->Get());
 			printf("tilt: %d  ", bBallAngle->Get());
-			printf("Top: %d  ", bBallElevatorTopLimit->Get());
-			printf("Bottom: %d \r", bBallElevatorBottomLimit->Get());
-
+			printf("stick y: %d /r", xboxDrive->GetLeftY());
+*/
 			Wait(0.01);
 		}
 	}
