@@ -311,7 +311,7 @@ public:
 				printf("speed: %f", speed);
 			}
 			
-			//bBallShooterTop->Set(speed);
+			bBallShooterTop->Set(speed);
 			
 			// random output stuff!! ////////////
 /*			printf("lft: %d  ", encoderWheelsLeft->Get());
