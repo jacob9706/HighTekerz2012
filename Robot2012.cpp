@@ -3,19 +3,23 @@
 #include "SubSystems/ElevatorSystem.h"
 #include "Util/Switch.h"
 #include "Util/XboxController.h"
+#include "Vision/JSON.h"
 
-/**
- * This is a demo program showing the use of the RobotBase class.
- * The SimpleRobot class is the base of a robot application that will automatically call your
- * Autonomous and OperatorControl methods at the right time as controlled by the switches on
- * the driver station or the field controls.
- */
-class Robot2012 : public SimpleRobot
+//Robot Server///////////
+STATUS tcpServer (void) ;
+MSG_Q_ID robotQueue;
+MSG_Q_ID getRobotMsgQueue()
 {
-	// Drive System /////////////////////
+	return robotQueue;
+}
+
+//Robot Class///////////
+class Robot2012 : public SimpleRobot
+{	
+	// Drive System //////////////////////
 	RobotDrive *myRobot;
 
-	// Outputs //////////////////////////
+	// Outputs ///////////////////////////
 	
 	// Motors
 	Victor* bBallRotator;
@@ -145,6 +149,18 @@ public:
 		
 		shooterState = false;
 		isShootStick = driverStationControl->GetDigitalIn(1);
+		
+		//Robot Server///////////
+			robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
+			if (taskSpawn("tcpServer", 100, 0, 10000, 
+					(FUNCPTR) tcpServer, 0,0,0,0,0,0,0,0,0,0) == ERROR) 
+			{ 
+				/* if taskSpawn fails, close fd and return to top of loop */ 
+
+				perror ("taskSpawn"); 
+
+			}
+		
 		// init
 		
 		//random
@@ -280,6 +296,21 @@ public:
 //			robotElevator->PeriodicSystem((switchAimTrigger.State(aimStick->GetTrigger())));
 			robotElevator->PeriodicSystem(xboxShoot->GetY());
 			
+			//Robot Server///////////
+			char msgBuf[1024];
+
+			//printf("%d\n", val);
+			memset(msgBuf, 0, sizeof(char) * 1024);
+			if (msgQReceive(robotQueue, msgBuf, 1024, NO_WAIT) != ERROR) {
+				printf("Got a message: %s", msgBuf);
+
+				JSONValue *value = JSON::Parse(msgBuf);
+
+				JSONObject root = value->AsObject();
+
+				printf("Num = %d\n", (int)(root[L"num"]->AsNumber()));
+
+			}
 			
 			// random output stuff!! ////////////
 /*			printf("lft: %d  ", encoderWheelsLeft->Get());
