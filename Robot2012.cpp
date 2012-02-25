@@ -204,8 +204,8 @@ public:
 			
 			//  initial plan ///////////////////////////////////////////////
 //			Driver
-//			-rb rt suck balls
-//			-lb lt spit balls
+//			-rb & rt load balls
+//			-lb & lt unload balls
 //
 //			Shooter
 //			-lt rt rotation
