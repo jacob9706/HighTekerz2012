@@ -182,8 +182,10 @@ public:
 	 * Runs the motors under driver control with either tank or arcade steering selected
 	 * by a jumper in DS Digin 0. Also an arm will operate based on a joystick Y-axis. 
 	 */
+	
 	void OperatorControl(void)
 	{
+		static float speed = 0;
 		printf("hi");
 		while (IsOperatorControl())
 		{
@@ -212,7 +214,7 @@ public:
 			
 
 			// Collect and Shoot bBalls///////////
-
+/*
 			if(xboxShoot->GetRB() || xboxShoot->GetRightTrigger() < -.1)
 			{
 				shooterState = true;
@@ -233,7 +235,7 @@ public:
 				bBallShooterTop->Set(0.0);
 				bBallShooterBottom->Set(0.0);
 			}
-			
+*/			
 			shooterArm->Set(xboxShoot->GetA());
 			
 			
@@ -299,18 +301,17 @@ public:
 			//Robot Server///////////
 			char msgBuf[1024];
 
+
 			//printf("%d\n", val);
 			memset(msgBuf, 0, sizeof(char) * 1024);
 			if (msgQReceive(robotQueue, msgBuf, 1024, NO_WAIT) != ERROR) {
 				printf("Got a message: %s", msgBuf);
-
-				JSONValue *value = JSON::Parse(msgBuf);
-
-				JSONObject root = value->AsObject();
-
-				printf("Num = %d\n", (int)(root[L"num"]->AsNumber()));
-
+				speed = atoi(msgBuf);
+				speed /= 1000;
+				printf("speed: %f", speed);
 			}
+			
+			//bBallShooterTop->Set(speed);
 			
 			// random output stuff!! ////////////
 /*			printf("lft: %d  ", encoderWheelsLeft->Get());
