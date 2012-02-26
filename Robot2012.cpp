@@ -197,7 +197,7 @@ public:
 			myRobot->TankDrive(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
 			
 			// Aim ////////////////////////////////
-			bBallRotator->Set(-xboxShoot->GetRightX());
+			bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
 //			bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 //			bBallShooterBottom->Set(driverStationControl->GetAnalogIn(1)*-1);
@@ -312,6 +312,7 @@ public:
 			}
 			
 			bBallShooterTop->Set(speed);
+			bBallShooterBottom->Set(speed);
 			
 			// random output stuff!! ////////////
 /*			printf("lft: %d  ", encoderWheelsLeft->Get());
