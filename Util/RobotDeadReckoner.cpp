@@ -34,26 +34,29 @@ RobotDeadReckoner::RobotDeadReckoner(Encoder *e1, Encoder *e2)
 	wheelSprocketTeeth = 26;
 	ticksPerRotation = (wheelSprocketTeeth/transmitionSprocketTeeth)*encoderTicksPerRotation; //ticks per rotation of wheel
 
-	encoderTicks1 = encoder1->Get();
-	encoderTicks2 = encoder2->Get();
-
 	pi = 3.14159;
 }
 
 float RobotDeadReckoner::getX()
 {
+	encoderTicks1 = encoder1->Get();
+	encoderTicks2 = encoder2->Get();
 	float x = wheelRadius*cos(getHeading())*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
 	return x;
 }
 
 float RobotDeadReckoner::getY()
 {
+	encoderTicks1 = encoder1->Get();
+	encoderTicks2 = encoder2->Get();
 	float y = wheelRadius*sin(getHeading())*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
 	return y;
 }
 
 float RobotDeadReckoner::getHeading()
 {
+	encoderTicks1 = encoder1->Get();
+	encoderTicks2 = encoder2->Get();
 	float heading = (2*pi)*(wheelRadius/axleWidthCenterToCenter)*(encoderTicks1-encoderTicks2);
 	return heading;
 }

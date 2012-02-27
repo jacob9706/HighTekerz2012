@@ -3,7 +3,6 @@
 #include "SubSystems/ElevatorSystem.h"
 #include "Util/Switch.h"
 #include "Util/XboxController.h"
-#include "Vision/JSON.h"
 
 //Robot Server///////////
 STATUS tcpServer (void) ;
@@ -22,6 +21,7 @@ class Robot2012 : public SimpleRobot
 	// Outputs ///////////////////////////
 	
 	// Motors
+	PWM* greenLightControl;
 	Victor* bBallRotator;
 	Victor* bBallPitchMotor;
 	Victor* bBallShooterTop;
@@ -76,6 +76,9 @@ class Robot2012 : public SimpleRobot
 	bool isShootStick;
 	bool shooterState;
 	
+	double speed1, speed2;
+	UINT8 lightValue;
+	
 public:
 	/**
 	 * Create an instance of a RobotDrive with left and right motors plugged into PWM
@@ -87,8 +90,16 @@ public:
 		myRobot = new RobotDrive(3, 4, 1, 2);	// create robot drive base
 		myRobot->SetExpiration(0.1);
 
+		speed1 = 0;
+		speed2 = 0;
+		lightValue = 0;
+		
 		// Outputs //////////////////////////		
 		// Motors
+		greenLightControl = new  PWM(1,6);
+		greenLightControl->SetPeriodMultiplier(PWM::kPeriodMultiplier_1X);
+		greenLightControl->EnableDeadbandElimination(false);
+		
 		bBallPitchMotor = new Victor(2,3);
 		bBallRotator = new Victor(2,4);
 		bBallShooterTop = new Victor(2,1);
@@ -170,6 +181,19 @@ public:
 
 	}
 
+	void processVisionBridge(char * msg) {
+		char * workingMessage = strtok(msg,",");
+		
+		do {
+			double value = atof(&workingMessage[1]);
+			switch(workingMessage[0]) {
+			case 'a': speed1 = value; break;
+			case 'b': speed2 = value; break;
+			case 'c': lightValue = atoi(&workingMessage[1]); break;
+			}
+		} while (workingMessage = strtok(0, ","));
+	}
+	
 	/**
 	 * Drive left & right motors for 2 seconds, enabled by a jumper (jumper
 	 * must be in for autonomous to operate).
@@ -178,6 +202,8 @@ public:
 	{
 	}
 
+	
+	
 	/**
 	 * Runs the motors under driver control with either tank or arcade steering selected
 	 * by a jumper in DS Digin 0. Also an arm will operate based on a joystick Y-axis. 
@@ -185,10 +211,10 @@ public:
 	
 	void OperatorControl(void)
 	{
-		static float speed = 0;
 		printf("hi");
 		while (IsOperatorControl())
 		{
+			//greenLightControl->SetRaw(10);
 			if (isShootStick != driverStationControl->GetDigitalIn(1))
 			{
 			}
@@ -197,7 +223,7 @@ public:
 			myRobot->TankDrive(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
 			
 			// Aim ////////////////////////////////
-			bBallRotator->Set(-xboxShoot->GetRightX()/2);
+			//bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
 //			bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 //			bBallShooterBottom->Set(driverStationControl->GetAnalogIn(1)*-1);
@@ -305,24 +331,28 @@ public:
 			//printf("%d\n", val);
 			memset(msgBuf, 0, sizeof(char) * 1024);
 			if (msgQReceive(robotQueue, msgBuf, 1024, NO_WAIT) != ERROR) {
-				printf("Got a message: %s", msgBuf);
-				speed = atoi(msgBuf);
-				speed /= 1000;
-				printf("speed: %f", speed);
+				printf("Got a message: %s\n", msgBuf);
+				
+				processVisionBridge(msgBuf);
+				//speed = atoi(msgBuf);
+				//speed /= 1000;
+				//printf("speed: %f", speed);
 			}
 			
-			bBallShooterTop->Set(speed);
-			bBallShooterBottom->Set(speed);
+			bBallRotator->Set(speed1);
+			bBallShooterBottom->Set(speed2);
+			greenLightControl->SetRaw(lightValue);
 			
 			// random output stuff!! ////////////
 /*			printf("lft: %d  ", encoderWheelsLeft->Get());
 			printf("rt: %d  ", encoderWheelsRight->Get());			
 			printf("turret: %d  ", encoderTurretRotation->Get());
 			printf("top enc: %d  ", bBallShooterTopEncoder->Get());			
-			printf("bottom enc: %d  ", bBallShooterBottomEncoder->Get());
-			printf("tilt: %d  ", bBallAngle->Get());
-			printf("stick y: %d /r", xboxDrive->GetLeftY());
 */
+			printf("Y position: %f  ", GetFieldy(encoderWheelsLeft->Get(), encoderWheelsRight->Get(), GetFieldHeading(encoderWheelsLeft->Get(), encoderWheelsRight->Get())));
+			printf("X position: %f  ", GetFieldX(encoderWheelsLeft->Get(), encoderWheelsRight->Get(), GetFieldHeading(encoderWheelsLeft->Get(), encoderWheelsRight->Get())));
+			printf("Heading: %f \r", GetFieldHeading(encoderWheelsLeft->Get(), encoderWheelsRight->Get()));
+
 			Wait(0.01);
 		}
 	}
@@ -347,6 +377,45 @@ public:
 		*computedSpeed = sqrt(32.2*(height+(sqrt(pow(height,2.0)+pow(distance,2.0)))));
 		printf("S: %f/n",*computedSpeed);
 	}
+	
+	float GetFieldHeading(int encoderTicks1, int encoderTicks2)
+	{
+		int wheelRadius = 4;//Wheel Radius (Center Wheel)
+		float axleWidthCenterToCenter = 30+(7/8);		
+
+		double pi = 3.14159;
+		float heading = (2*pi)*(wheelRadius/axleWidthCenterToCenter)*(encoderTicks1-encoderTicks2);
+		return heading;
+	}
+	
+	float GetFieldy(int encoderTicks1, int encoderTicks2, float heading)
+	{
+		int wheelRadius = 4;//Wheel Radius (Center Wheel)
+		int encoderTicksPerRotation = 360;
+		int transmitionSprocketTeeth = 12;
+		int wheelSprocketTeeth = 26;
+		int ticksPerRotation = (wheelSprocketTeeth/transmitionSprocketTeeth)*encoderTicksPerRotation; //ticks per rotation of wheel
+
+		double pi = 3.14159;
+
+		float y = wheelRadius*sin(heading)*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
+		return y;
+	}
+	
+	float GetFieldX(int encoderTicks1, int encoderTicks2, float heading)
+	{
+		int wheelRadius = 4;//Wheel Radius (Center Wheel)
+		int encoderTicksPerRotation = 360;
+		int transmitionSprocketTeeth = 12;
+		int wheelSprocketTeeth = 26;
+		int ticksPerRotation = (wheelSprocketTeeth/transmitionSprocketTeeth)*encoderTicksPerRotation; //ticks per rotation of wheel
+
+		double pi = 3.14159;
+
+		float x = wheelRadius*cos(heading)*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
+		return x;
+	}
+	
 };
 
 
