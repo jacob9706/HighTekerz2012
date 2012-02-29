@@ -3,6 +3,7 @@
 #include "SubSystems/ElevatorSystem.h"
 #include "Util/Switch.h"
 #include "Util/XboxController.h"
+#include "Util/DeadReckoner.h"
 
 //Robot Server///////////
 STATUS tcpServer (void) ;
@@ -46,6 +47,8 @@ class Robot2012 : public SimpleRobot
 	Encoder* bBallShooterTopEncoder;
 	Encoder* bBallShooterBottomEncoder;
 	Encoder* bBallAngle;
+	
+	DeadReckoner *mainDeadReckoner;
 	
 	// Switches
 	
@@ -126,12 +129,16 @@ public:
 		bBallShooterTopEncoder = new Encoder(2,5,2,6);
 		bBallShooterBottomEncoder = new Encoder(2,7,2,8);
 		
+		mainDeadReckoner = new DeadReckoner(encoderWheelsLeft,encoderWheelsRight);
+		
 		encoderWheelsLeft->Start();
 		encoderWheelsRight->Start();
 		encoderTurretRotation->Start();
 		bBallAngle->Start();
 		bBallShooterTopEncoder->Start();
 		bBallShooterBottomEncoder->Start();
+		
+		
 		
 		// Switches
 //		bBallCollectorSensor = new DigitalInput(2,3);
@@ -221,9 +228,10 @@ public:
 			
 			// Drive //////////////////////////////
 			myRobot->TankDrive(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
+			mainDeadReckoner->Start();
 			
 			// Aim ////////////////////////////////
-			//bBallRotator->Set(-xboxShoot->GetRightX()/2);
+			bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
 //			bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 //			bBallShooterBottom->Set(driverStationControl->GetAnalogIn(1)*-1);
@@ -240,7 +248,7 @@ public:
 			
 
 			// Collect and Shoot bBalls///////////
-/*
+
 			if(xboxShoot->GetRB() || xboxShoot->GetRightTrigger() < -.1)
 			{
 				shooterState = true;
@@ -261,7 +269,7 @@ public:
 				bBallShooterTop->Set(0.0);
 				bBallShooterBottom->Set(0.0);
 			}
-*/			
+			
 			shooterArm->Set(xboxShoot->GetA());
 			
 			
@@ -324,10 +332,13 @@ public:
 //			robotElevator->PeriodicSystem((switchAimTrigger.State(aimStick->GetTrigger())));
 			robotElevator->PeriodicSystem(xboxShoot->GetY());
 			
+			if(robotElevator->IsRunning)
+			{
+				bBallCollector->Set(Relay::kOff);
+			}
+			
 			//Robot Server///////////
 			char msgBuf[1024];
-
-
 			//printf("%d\n", val);
 			memset(msgBuf, 0, sizeof(char) * 1024);
 			if (msgQReceive(robotQueue, msgBuf, 1024, NO_WAIT) != ERROR) {
@@ -338,20 +349,20 @@ public:
 				//speed /= 1000;
 				//printf("speed: %f", speed);
 			}
-			
+			/*
 			bBallRotator->Set(speed1);
 			bBallShooterBottom->Set(speed2);
 			greenLightControl->SetRaw(lightValue);
-			
+			*/
 			// random output stuff!! ////////////
 /*			printf("lft: %d  ", encoderWheelsLeft->Get());
 			printf("rt: %d  ", encoderWheelsRight->Get());			
 			printf("turret: %d  ", encoderTurretRotation->Get());
 			printf("top enc: %d  ", bBallShooterTopEncoder->Get());			
 */
-			printf("Y position: %f  ", GetFieldy(encoderWheelsLeft->Get(), encoderWheelsRight->Get(), GetFieldHeading(encoderWheelsLeft->Get(), encoderWheelsRight->Get())));
-			printf("X position: %f  ", GetFieldX(encoderWheelsLeft->Get(), encoderWheelsRight->Get(), GetFieldHeading(encoderWheelsLeft->Get(), encoderWheelsRight->Get())));
-			printf("Heading: %f \r", GetFieldHeading(encoderWheelsLeft->Get(), encoderWheelsRight->Get()));
+			//printf("X position: %f  ", mainDeadReckoner->PositionX() );
+			//printf("Y position: %f  ", mainDeadReckoner->PositionY() );
+			//printf("Heading: %f \r", mainDeadReckoner->Heading() );
 
 			Wait(0.01);
 		}
