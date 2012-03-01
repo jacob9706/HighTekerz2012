@@ -218,7 +218,7 @@ public:
 	
 	void OperatorControl(void)
 	{
-		printf("hi");
+		int loopCount = 0;
 		while (IsOperatorControl())
 		{
 			//greenLightControl->SetRaw(10);
@@ -228,7 +228,6 @@ public:
 			
 			// Drive //////////////////////////////
 			myRobot->TankDrive(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
-			mainDeadReckoner->Start();
 			
 			// Aim ////////////////////////////////
 			bBallRotator->Set(-xboxShoot->GetRightX()/2);
@@ -280,7 +279,7 @@ public:
 				bBallCollector->Set(Relay::kOn);
 				bBallCollector->Set(Relay::kReverse);						
 			}
-			else if (xboxDrive->GetRB() || xboxDrive->GetRightTrigger() < -.1)
+			else if ((xboxDrive->GetRB() || xboxDrive->GetRightTrigger() < -.1) && !robotElevator->IsRunning)
 			{
 				bBallCollector->Set(Relay::kOn);
 				bBallCollector->Set(Relay::kForward);						
@@ -332,11 +331,6 @@ public:
 //			robotElevator->PeriodicSystem((switchAimTrigger.State(aimStick->GetTrigger())));
 			robotElevator->PeriodicSystem(xboxShoot->GetY());
 			
-			if(robotElevator->IsRunning)
-			{
-				bBallCollector->Set(Relay::kOff);
-			}
-			
 			//Robot Server///////////
 			char msgBuf[1024];
 			//printf("%d\n", val);
@@ -354,16 +348,17 @@ public:
 			bBallShooterBottom->Set(speed2);
 			greenLightControl->SetRaw(lightValue);
 			*/
-			// random output stuff!! ////////////
-/*			printf("lft: %d  ", encoderWheelsLeft->Get());
-			printf("rt: %d  ", encoderWheelsRight->Get());			
-			printf("turret: %d  ", encoderTurretRotation->Get());
-			printf("top enc: %d  ", bBallShooterTopEncoder->Get());			
-*/
-			//printf("X position: %f  ", mainDeadReckoner->PositionX() );
-			//printf("Y position: %f  ", mainDeadReckoner->PositionY() );
-			//printf("Heading: %f \r", mainDeadReckoner->Heading() );
 
+			// random output stuff!! ////////////
+
+			mainDeadReckoner->Update();
+			if(loopCount % 10 == 0)
+			{
+				printf("X position: %f  ", mainDeadReckoner->PositionX() );
+				printf("Y position: %f  ", mainDeadReckoner->PositionY() );
+				printf("Heading: %f \r", mainDeadReckoner->Heading() );
+			}
+			loopCount++;
 			Wait(0.01);
 		}
 	}
