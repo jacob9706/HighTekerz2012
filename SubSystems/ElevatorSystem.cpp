@@ -8,14 +8,17 @@ ElevatorSystem::ElevatorSystem(Relay* lowerElevatorMotor,
 		DigitalInput* upperLimitSwitch)
 {
 	_lowerElevatorMotor = lowerElevatorMotor;
-	_lowerLimitSwitch = lowerLimitSwitch;
+	_lowerLimitSwitchOpen = lowerLimitSwitch;
 	_upperElevatorMotor = upperElevatorMotor;
-	_upperLimitSwitch = upperLimitSwitch;
+	_upperLimitSwitchOpen = upperLimitSwitch;
 	
 	IsRunning = false;	
 	elevatorUp = false;
 	elevatorDown = false;
 	timeStart = 601.0;
+	
+	limitReachedLowerBottom = !_lowerLimitSwitchOpen->Get();
+	limitReachedLowerTop = !_upperLimitSwitchOpen->Get();
 }
 
 ElevatorSystem::~ElevatorSystem()
@@ -53,7 +56,7 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 		_lowerElevatorMotor->Set(Relay::kOn);
 		_lowerElevatorMotor->Set(Relay::kForward);
 
-		if (!_lowerLimitSwitch->Get())  // bottom switch clicked
+		if (!_lowerLimitSwitchOpen->Get())  // bottom switch clicked
 		{
 			elevatorDown = false;
 
@@ -69,7 +72,7 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 		_lowerElevatorMotor->Set(Relay::kReverse);
 
 		// if top limit clicked
-		if (!_upperLimitSwitch->Get())
+		if (!_upperLimitSwitchOpen->Get())
 		{
 			//stop bottom el
 			
@@ -79,4 +82,11 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 			elevatorDown = true;
 		}
 	}
+	
+	if (limitReachedLowerBottom)
+	{
+		
+	}
+	
+	
 }

@@ -12,15 +12,22 @@ public:
 	float PositionX();
 	float PositionY();
 	float Heading();
+	float AngularVelocity();
+	float Velocity();
 	int leftCount;
 	int rightCount;
-private:
 	Encoder *leftEncoder;
 	Encoder *rightEncoder;
+private:
 	float heading;
 	float x;
 	float y;
-	float pi;
+	double lastTime;
+	int leftCountDelta;
+	int rightCountDelta;
+	int lastLeftCount;
+	int lastRightCount;
+	double lastHeading;
 };
 
 #endif 

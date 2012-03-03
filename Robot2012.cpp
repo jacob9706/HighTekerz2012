@@ -1,9 +1,11 @@
 #include "WPILib.h"
 #include "math.h"
 #include "SubSystems/ElevatorSystem.h"
+#include "SubSystems/Drivetrain.h"
 #include "Util/Switch.h"
 #include "Util/XboxController.h"
 #include "Util/DeadReckoner.h"
+#include "SubSystems/Shooter.h"
 
 //Robot Server///////////
 STATUS tcpServer (void) ;
@@ -17,7 +19,7 @@ MSG_Q_ID getRobotMsgQueue()
 class Robot2012 : public SimpleRobot
 {	
 	// Drive System //////////////////////
-	RobotDrive *myRobot;
+	Drivetrain *myRobot;
 
 	// Outputs ///////////////////////////
 	
@@ -48,8 +50,6 @@ class Robot2012 : public SimpleRobot
 	Encoder* bBallShooterBottomEncoder;
 	Encoder* bBallAngle;
 	
-	DeadReckoner *mainDeadReckoner;
-	
 	// Switches
 	
 //	DigitalInput *bBallCollectorSensor;
@@ -73,6 +73,8 @@ class Robot2012 : public SimpleRobot
 
 	ElevatorSystem* robotElevator;
 	
+	Shooter *robotShooter;
+	
 	Switch shooterSwitch;
 	Switch switchAimTrigger;
 	
@@ -89,10 +91,6 @@ public:
 
 	Robot2012(void)
 	{
-		// Drive System /////////////////////
-		myRobot = new RobotDrive(3, 4, 1, 2);	// create robot drive base
-		myRobot->SetExpiration(0.1);
-
 		speed1 = 0;
 		speed2 = 0;
 		lightValue = 0;
@@ -129,8 +127,6 @@ public:
 		bBallShooterTopEncoder = new Encoder(2,5,2,6);
 		bBallShooterBottomEncoder = new Encoder(2,7,2,8);
 		
-		mainDeadReckoner = new DeadReckoner(encoderWheelsLeft,encoderWheelsRight);
-		
 		encoderWheelsLeft->Start();
 		encoderWheelsRight->Start();
 		encoderTurretRotation->Start();
@@ -162,12 +158,27 @@ public:
 		// Systems and Support ///////////////////
 		robotElevator = new ElevatorSystem(bBallElevatorBottom, bBallElevatorTop, bBallElevatorBottomLimit, bBallElevatorTopLimit);
 
+		robotShooter = new Shooter(bBallShooterTop,
+									bBallShooterBottom,
+									bBallRotator,
+									bBallPitchMotor,
+									bBallShooterTopEncoder,
+									bBallShooterBottomEncoder,
+									encoderTurretRotation,
+									bBallAngle,
+									shooterArm);
+		
 		shooterSwitch = Switch();
 		switchAimTrigger = Switch();
 		
 		shooterState = false;
 		isShootStick = driverStationControl->GetDigitalIn(1);
-		
+
+		// Drive System /////////////////////
+		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight);	// create robot drive base
+		myRobot->SetExpiration(0.1);
+
+
 		//Robot Server///////////
 			robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
 			if (taskSpawn("tcpServer", 100, 0, 10000, 
@@ -227,13 +238,17 @@ public:
 			}
 			
 			// Drive //////////////////////////////
-			myRobot->TankDrive(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
+			myRobot->Periodic(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
 			
 			// Aim ////////////////////////////////
-			bBallRotator->Set(-xboxShoot->GetRightX()/2);
-			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
-//			bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
+			//bBallRotator->Set(-xboxShoot->GetRightX()/2);
+			//bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
+			
+			
+//			
+			bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 //			bBallShooterBottom->Set(driverStationControl->GetAnalogIn(1)*-1);
+			
 			
 			//  initial plan ///////////////////////////////////////////////
 //			Driver
@@ -351,12 +366,11 @@ public:
 
 			// random output stuff!! ////////////
 
-			mainDeadReckoner->Update();
 			if(loopCount % 10 == 0)
 			{
-				printf("X position: %d  ", mainDeadReckoner->rightCount );
-				printf("Y position: %d  ", mainDeadReckoner->leftCount );
-				printf("Heading: %f \r", mainDeadReckoner->Heading() );
+				printf("X position: %f  ", myRobot->PositionX() );
+				printf("Y position: %f  ", myRobot->PositionY() );
+				printf("Heading: %f \r", myRobot->Heading() );
 			}
 			loopCount++;
 			Wait(0.01);

@@ -2,6 +2,11 @@
 #include "math.h"
 #include "Encoder.h"
 
+const static double ticksPerRevolution = 780.0;
+const static double pi = 3.14159;
+const static double wheelWidth = 30.875;
+const static double wheelRadius = 4.0;
+
 DeadReckoner::DeadReckoner(Encoder *leftEncoder2, Encoder *rightEncoder2)
 {
 	leftEncoder = leftEncoder2;
@@ -11,20 +16,24 @@ DeadReckoner::DeadReckoner(Encoder *leftEncoder2, Encoder *rightEncoder2)
 	heading = 0.0;
 	x = 0.0;
 	y = 0.0;
-	pi = 3.14159;
 }
 DeadReckoner::~DeadReckoner()
 {
 	
 }
 void DeadReckoner::Update()
-{
+{	
+	leftCountDelta = leftEncoder->Get() - leftCount;
+	rightCountDelta = rightEncoder->Get() - rightCount;
+
 	leftCount = leftEncoder->Get();
 	rightCount = rightEncoder->Get();
-	heading = (2.0*pi)*(4.0/(30.0 +(7.0/8.0)))*(leftCount-rightCount);
-	x = 4.0*sin(heading)*(leftCount+rightCount)*(pi/780.0);
-	y = 4.0*cos(heading)*(leftCount+rightCount)*(pi/780.0);
+		
+	heading = (2.0*pi)*(wheelRadius/(wheelWidth))*((leftCount-rightCount)/ticksPerRevolution);
+	x += wheelRadius*sin(heading)*(leftCountDelta+rightCountDelta)*(pi/ticksPerRevolution);
+	y += wheelRadius*cos(heading)*(leftCountDelta+rightCountDelta)*(pi/ticksPerRevolution);
 }
+
 float DeadReckoner::PositionX()
 {
 	return x;
