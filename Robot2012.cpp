@@ -354,8 +354,8 @@ public:
 			mainDeadReckoner->Update();
 			if(loopCount % 10 == 0)
 			{
-				printf("X position: %f  ", mainDeadReckoner->PositionX() );
-				printf("Y position: %f  ", mainDeadReckoner->PositionY() );
+				printf("X position: %d  ", mainDeadReckoner->rightCount );
+				printf("Y position: %d  ", mainDeadReckoner->leftCount );
 				printf("Heading: %f \r", mainDeadReckoner->Heading() );
 			}
 			loopCount++;

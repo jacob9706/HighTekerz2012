@@ -12,11 +12,11 @@ public:
 	float PositionX();
 	float PositionY();
 	float Heading();
+	int leftCount;
+	int rightCount;
 private:
 	Encoder *leftEncoder;
 	Encoder *rightEncoder;
-	int leftCount;
-	int rightCount;
 	float heading;
 	float x;
 	float y;
