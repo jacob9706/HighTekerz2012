@@ -21,6 +21,7 @@ public:
 	void Periodic(bool shoot);
 	void ManualRotate(float axis);
 	void ManualPitch(float axis);
+	bool IsShooting;
 private:
 	Victor *_topWheel;
 	Victor *_bottomWheel;

@@ -21,6 +21,8 @@ Shooter::Shooter(Victor *topWheel,
 	_rotationEncoder = rotationEncoder;
 	_pitchEncoder = pitchEncoder;
 	_kicker = kicker;
+	
+	IsShooting = false;
 }
 
 Shooter::~Shooter()
