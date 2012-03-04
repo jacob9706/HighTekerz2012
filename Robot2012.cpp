@@ -29,9 +29,10 @@ class Robot2012 : public SimpleRobot
 	Victor* bBallPitchMotor;
 	Victor* bBallShooterTop;
 	Victor* bBallShooterBottom;
+	Victor *bBallCollector;
 	Relay* bBallElevatorBottom;
 	Relay* bBallElevatorTop;
-	Relay* bBallCollector;
+	//Relay* bBallCollector;
 
 	// Air
 	Compressor* airCompressor;
@@ -108,7 +109,7 @@ public:
 		
 		bBallElevatorBottom = new Relay(2,1,Relay::kBothDirections);
 		bBallElevatorTop = new Relay(2,2,Relay::kBothDirections);
-		bBallCollector = new Relay(2,4,Relay::kBothDirections);
+		bBallCollector = new Victor(2,5);
 
 		// Air
 		airCompressor = new Compressor(1,10,2,3);
@@ -291,17 +292,15 @@ public:
 			// collector ///////////////////////////////
 			if (xboxDrive->GetLB() || xboxDrive->GetLeftTrigger() > .1)
 			{
-				bBallCollector->Set(Relay::kOn);
-				bBallCollector->Set(Relay::kReverse);						
+				bBallCollector->Set(-1.0);
 			}
 			else if ((xboxDrive->GetRB() || xboxDrive->GetRightTrigger() < -.1) && !robotElevator->IsRunning)
 			{
-				bBallCollector->Set(Relay::kOn);
-				bBallCollector->Set(Relay::kForward);						
+				bBallCollector->Set(1.0);						
 			}
 			else
 			{
-				bBallCollector->Set(Relay::kOff);
+				bBallCollector->Set(0.0);
 			}
 
 			
