@@ -177,8 +177,6 @@ public:
 
 		// Drive System /////////////////////
 		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight);	// create robot drive base
-		myRobot->SetExpiration(0.1);
-
 
 		//Robot Server///////////
 			robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
@@ -367,9 +365,7 @@ public:
 
 			if(loopCount % 10 == 0)
 			{
-				printf("X position: %f  ", myRobot->PositionX() );
-				printf("Y position: %f  ", myRobot->PositionY() );
-				printf("Heading: %f \r", myRobot->Heading() );
+				Debug();
 			}
 			loopCount++;
 			Wait(0.01);
@@ -433,6 +429,18 @@ public:
 
 		float x = wheelRadius*cos(heading)*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
 		return x;
+	}
+	
+	void Debug()
+	{
+		printf("l:%f", myRobot->leftMotorSetting);
+		printf("r:%f", myRobot->rightMotorSetting);
+
+		//printf("X position: %f  ", myRobot->PositionX() );
+		//printf("Y position: %f  ", myRobot->PositionY() );
+		//printf("Heading: %f", myRobot->Heading() );
+		
+		printf("\r");
 	}
 	
 };

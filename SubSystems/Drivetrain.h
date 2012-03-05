@@ -15,9 +15,9 @@ public:
 	void Periodic(float moveLeft, float moveRight);
 	float AngularVelocity();
 	float Velocity();
-private:
 	float rightMotorSetting;
 	float leftMotorSetting;
+private:
 };
 
 #endif
