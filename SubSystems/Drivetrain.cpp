@@ -18,7 +18,6 @@ Drivetrain::~Drivetrain()
 
 }
 
-// ignore positioning
 float NewSpeed(float oldSpeed,float newRequestedSpeed)
 {
 	float diff = newRequestedSpeed - oldSpeed;
@@ -37,9 +36,7 @@ float NewSpeed(float oldSpeed,float newRequestedSpeed)
 	{
 		return newRequestedSpeed;
 	}
-//	return newRequestedSpeed;
 }
-//-----------
 
 void Drivetrain::Periodic(float moveLeftInput, float moveRightInput)
 {
@@ -53,7 +50,6 @@ void Drivetrain::Periodic(float moveLeftInput, float moveRightInput)
 		{
 			moveLeftInput = moveRightInput;
 		}
-		
 	}
 
 	float newLeftSpeed = NewSpeed(leftMotorSetting, moveLeftInput);
