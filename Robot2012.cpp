@@ -1,4 +1,3 @@
-// check for update 3/4 11:38
 #include "WPILib.h"
 #include "math.h"
 #include "SubSystems/ElevatorSystem.h"
