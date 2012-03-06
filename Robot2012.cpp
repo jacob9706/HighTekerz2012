@@ -227,7 +227,8 @@ public:
 	 */
 	
 	void OperatorControl(void)
-	{
+	{		
+		char msgBuf[1024];
 		int loopCount = 0;
 		while (IsOperatorControl())
 		{
@@ -238,8 +239,7 @@ public:
 			
 			// Drive //////////////////////////////
 			myRobot->Periodic(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
-			
-			// Aim ////////////////////////////////
+						// Aim ////////////////////////////////
 			//bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			//bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
 			
@@ -338,13 +338,18 @@ public:
 				bBallElevatorTop->Set(Relay::kOff);
 			}
 			
+			//Reset DeadReckoner
+			if(xboxDrive->GetSelect())
+			{
+				myRobot->ResetPosition();
+			}
+			
 			// Air compressor
 			
 //			robotElevator->PeriodicSystem((switchAimTrigger.State(aimStick->GetTrigger())));
 			robotElevator->PeriodicSystem(xboxShoot->GetY());
 			
 			//Robot Server///////////
-			char msgBuf[1024];
 			//printf("%d\n", val);
 			memset(msgBuf, 0, sizeof(char) * 1024);
 			if (msgQReceive(robotQueue, msgBuf, 1024, NO_WAIT) != ERROR) {
@@ -363,7 +368,7 @@ public:
 
 			// random output stuff!! ////////////
 
-			if(loopCount % 10 == 0)
+			if(loopCount % 50 == 0)
 			{
 				Debug();
 			}
@@ -433,16 +438,30 @@ public:
 	
 	void Debug()
 	{
-		printf("l:%f", myRobot->leftMotorSetting);
-		printf("r:%f", myRobot->rightMotorSetting);
+//		printf("l:%f", myRobot->leftMotorSetting);
+//		printf("r:%f", myRobot->rightMotorSetting);
 
+		printf(" tE: %i", bBallShooterTopEncoder->Get());
+		printf(" bE: %i", bBallShooterBottomEncoder->Get());
+
+		printf("x:%f", myRobot->PositionX());
+		printf(" y:%f", myRobot->PositionY());
+		
+		printf(" eL:%i", myRobot->leftCount);
+		printf(" eR:%i", myRobot->rightCount);
+		
+		printf(" h:%f", myRobot->Heading());
+		
 		//printf("X position: %f  ", myRobot->PositionX() );
 		//printf("Y position: %f  ", myRobot->PositionY() );
 		//printf("Heading: %f", myRobot->Heading() );
 		
 		printf("\r");
 	}
-	
+
+	//TODO: check the angle of shooter.
+	//TODO: Play with Rampup code to get everybody's needs
+
 };
 
 

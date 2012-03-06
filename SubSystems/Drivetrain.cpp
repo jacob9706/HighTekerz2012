@@ -40,17 +40,17 @@ float NewSpeed(float oldSpeed,float newRequestedSpeed)
 
 void Drivetrain::Periodic(float moveLeftInput, float moveRightInput)
 {
-	if (fabs(moveLeftInput - moveRightInput) < allowableInputDifference)
-	{
-		if (fabs(moveLeftInput) > fabs(moveRightInput))
-		{ 
-			moveRightInput = moveLeftInput;
-		}
-		else
-		{
-			moveLeftInput = moveRightInput;
-		}
-	}
+//	if (fabs(moveLeftInput - moveRightInput) < allowableInputDifference)
+//	{
+//		if (fabs(moveLeftInput) > fabs(moveRightInput))
+//		{ 
+//			moveRightInput = moveLeftInput;
+//		}
+//		else
+//		{
+//			moveLeftInput = moveRightInput;
+//		}
+//	}
 
 	float newLeftSpeed = NewSpeed(leftMotorSetting, moveLeftInput);
 	float newRightSpeed = NewSpeed(rightMotorSetting, moveRightInput);

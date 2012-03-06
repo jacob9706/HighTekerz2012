@@ -21,6 +21,17 @@ DeadReckoner::~DeadReckoner()
 {
 	
 }
+
+void DeadReckoner::ResetPosition()
+{
+	leftEncoder->Reset();
+	rightEncoder->Reset();
+	leftCount = 0;
+	rightCount = 0;
+	x = 0.0;
+	y = 0.0;
+	heading = 0.0;
+}
 void DeadReckoner::Update()
 {	
 	leftCountDelta = leftEncoder->Get() - leftCount;

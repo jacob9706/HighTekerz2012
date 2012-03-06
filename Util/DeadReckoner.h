@@ -8,6 +8,7 @@ class DeadReckoner
 public:
 	DeadReckoner(Encoder *leftEncoder, Encoder *rightEncoder);
 	~DeadReckoner();
+	void ResetPosition();
 	void Update();
 	float PositionX();
 	float PositionY();
