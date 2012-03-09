@@ -5,7 +5,7 @@
 #include "Util/Switch.h"
 #include "Util/XboxController.h"
 #include "Util/DeadReckoner.h"
-#include "SubSystems/Shooter.h"
+//#include "SubSystems/Shooter.h"
 
 //Robot Server///////////
 STATUS tcpServer (void) ;
@@ -47,9 +47,9 @@ class Robot2012 : public SimpleRobot
 	Encoder* encoderWheelsLeft;
 	Encoder* encoderWheelsRight;
 	Encoder* encoderTurretRotation;
-	Encoder* bBallShooterTopEncoder;
-	Encoder* bBallShooterBottomEncoder;
 	Encoder* bBallAngle;
+	Encoder* shooterTop;
+	Encoder* shooterBottom;
 	
 	// Switches
 	
@@ -74,16 +74,18 @@ class Robot2012 : public SimpleRobot
 
 	ElevatorSystem* robotElevator;
 	
-	Shooter *robotShooter;
+	//Shooter *robotShooter;
 	
-	Switch shooterSwitch;
-	Switch switchAimTrigger;
+	Switch* shooterSwitch;
+	Switch* switchAimTrigger;
 	
 	bool isShootStick;
 	bool shooterState;
 	
 	double speed1, speed2;
 	UINT8 lightValue;
+	
+	DeadReckoner* testThingee;
 	
 public:
 	/**
@@ -121,19 +123,23 @@ public:
 		// On robot //
 		// Encoders
 
-		encoderWheelsLeft = new Encoder(1,1,1,2,false);
-		encoderWheelsRight = new Encoder(1,3,1,4,true);
+//		encoderWheelsLeft = new Encoder(2,9,2,10);
+//		bBallShooterBottomEncoder = new Encoder(1,1,1,2,false);
+
+		encoderWheelsLeft = new Encoder(1,1,1,2,false,Encoder::k1X);
+		encoderWheelsRight = new Encoder(1,3,1,4,true,Encoder::k1X);
 		encoderTurretRotation = new Encoder(2,3,2,4);
 		bBallAngle = new Encoder(2,11,2,12);
-		bBallShooterTopEncoder = new Encoder(2,5,2,6);
-		bBallShooterBottomEncoder = new Encoder(2,7,2,8);
+		//TODO: Put in correct slots
+		shooterTop = new Encoder(2,5,2,6,false);
+		shooterBottom = new Encoder(2,7,2,8,false);
 		
 		encoderWheelsLeft->Start();
 		encoderWheelsRight->Start();
 		encoderTurretRotation->Start();
 		bBallAngle->Start();
-		bBallShooterTopEncoder->Start();
-		bBallShooterBottomEncoder->Start();
+		shooterTop->Start();
+		shooterBottom->Start();
 		
 		
 		
@@ -159,25 +165,25 @@ public:
 		// Systems and Support ///////////////////
 		robotElevator = new ElevatorSystem(bBallElevatorBottom, bBallElevatorTop, bBallElevatorBottomLimit, bBallElevatorTopLimit);
 
-		robotShooter = new Shooter(bBallShooterTop,
-									bBallShooterBottom,
-									bBallRotator,
-									bBallPitchMotor,
-									bBallShooterTopEncoder,
-									bBallShooterBottomEncoder,
-									encoderTurretRotation,
-									bBallAngle,
-									shooterArm);
+//		robotShooter = new Shooter(bBallShooterTop,
+//									bBallShooterBottom,
+//									bBallRotator,
+//									bBallPitchMotor,
+//									bBallShooterTopEncoder,
+//									bBallShooterBottomEncoder,
+//									encoderTurretRotation,
+//									bBallAngle,
+//									shooterArm);
 		
-		shooterSwitch = Switch();
-		switchAimTrigger = Switch();
+//		shooterSwitch = Switch();
+//		switchAimTrigger = Switch();
 		
 		shooterState = false;
 		isShootStick = driverStationControl->GetDigitalIn(1);
 
 		// Drive System /////////////////////
 		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight);	// create robot drive base
-
+		
 		//Robot Server///////////
 			robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
 			if (taskSpawn("tcpServer", 100, 0, 10000, 
@@ -193,8 +199,6 @@ public:
 		
 		//random
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, "Hello World");
-		dsLCD->UpdateLCD();
 
 	}
 
@@ -239,6 +243,7 @@ public:
 			
 			// Drive //////////////////////////////
 			myRobot->Periodic(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
+			testThingee->Update();
 						// Aim ////////////////////////////////
 			//bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			//bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
@@ -438,25 +443,32 @@ public:
 	
 	void Debug()
 	{
+		int i = 0;
 //		printf("l:%f", myRobot->leftMotorSetting);
 //		printf("r:%f", myRobot->rightMotorSetting);
+		
 
-		printf(" tE: %i", bBallShooterTopEncoder->Get());
-		printf(" bE: %i", bBallShooterBottomEncoder->Get());
-
-		printf("x:%f", myRobot->PositionX());
-		printf(" y:%f", myRobot->PositionY());
+//		printf("x:%f", myRobot->PositionX());
+//		printf(" y:%f", myRobot->PositionY());
 		
 		printf(" eL:%i", myRobot->leftCount);
 		printf(" eR:%i", myRobot->rightCount);
 		
-		printf(" h:%f", myRobot->Heading());
+//		printf(" h:%f", myRobot->Heading());
 		
 		//printf("X position: %f  ", myRobot->PositionX() );
 		//printf("Y position: %f  ", myRobot->PositionY() );
 		//printf("Heading: %f", myRobot->Heading() );
 		
 		printf("\r");
+		
+		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tE: %d", shooterTop->GetRate());
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bE: %d", shooterBottom->GetRate());
+		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " eL:%i", myRobot->leftCount);
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " eR:%i", myRobot->rightCount);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " tilt:%i", bBallAngle->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " tilt:%i", encoderTurretRotation->Get());
+		dsLCD->UpdateLCD();
 	}
 
 	//TODO: check the angle of shooter.

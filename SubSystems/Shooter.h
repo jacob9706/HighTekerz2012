@@ -22,6 +22,8 @@ public:
 	void ManualRotate(float axis);
 	void ManualPitch(float axis);
 	bool IsShooting;
+	int leftCount;
+	int rightCount;
 private:
 	Victor *_topWheel;
 	Victor *_bottomWheel;
