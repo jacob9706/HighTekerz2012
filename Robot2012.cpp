@@ -23,8 +23,10 @@ class Robot2012 : public SimpleRobot
 
 	// Outputs ///////////////////////////
 	
+	// Vision
+	PWM* greenLightControl;	
+
 	// Motors
-	PWM* greenLightControl;
 	Victor* bBallRotator;
 	Victor* bBallPitchMotor;
 	Victor* bBallShooterTop;
@@ -57,14 +59,16 @@ class Robot2012 : public SimpleRobot
 //	DigitalInput *bBallElevatorSensor;
 	DigitalInput *bBallElevatorTopLimit;
 	DigitalInput *bBallElevatorBottomLimit;
-	
+	Switch* shooterSwitch;
+	Switch* switchAimTrigger;
+		
 	// Other
 	ADXL345_I2C *accel;
 	Gyro *gyro;
 	
 	// Driver Station //
 
-	DriverStation *driverStationControl;				// driver station object
+	DriverStation *driverStationControl;
 	DriverStationLCD* dsLCD;
 
 	XboxController *xboxDrive;
@@ -73,19 +77,14 @@ class Robot2012 : public SimpleRobot
 	// Systems and Support ///////////////////
 
 	ElevatorSystem* robotElevator;
-	
+
 	//Shooter *robotShooter;
-	
-	Switch* shooterSwitch;
-	Switch* switchAimTrigger;
-	
+
 	bool isShootStick;
 	bool shooterState;
 	
 	double speed1, speed2;
 	UINT8 lightValue;
-	
-	DeadReckoner* testThingee;
 	
 public:
 	/**
@@ -98,12 +97,13 @@ public:
 		speed2 = 0;
 		lightValue = 0;
 		
-		// Outputs //////////////////////////		
-		// Motors
+		// Outputs //////////////////////////
+		// Vision
 		greenLightControl = new  PWM(1,6);
 		greenLightControl->SetPeriodMultiplier(PWM::kPeriodMultiplier_1X);
 		greenLightControl->EnableDeadbandElimination(false);
-		
+
+		// Motors
 		bBallPitchMotor = new Victor(2,3);
 		bBallRotator = new Victor(2,4);
 		bBallShooterTop = new Victor(2,1);
@@ -123,14 +123,10 @@ public:
 		// On robot //
 		// Encoders
 
-//		encoderWheelsLeft = new Encoder(2,9,2,10);
-//		bBallShooterBottomEncoder = new Encoder(1,1,1,2,false);
-
-		encoderWheelsLeft = new Encoder(1,1,1,2,false,Encoder::k1X);
-		encoderWheelsRight = new Encoder(1,3,1,4,true,Encoder::k1X);
+		encoderWheelsLeft = new Encoder(1,1,1,2,false,Encoder::k2X);
+		encoderWheelsRight = new Encoder(1,3,1,4,true,Encoder::k2X);
 		encoderTurretRotation = new Encoder(2,3,2,4);
 		bBallAngle = new Encoder(2,11,2,12);
-		//TODO: Put in correct slots
 		shooterTop = new Encoder(2,5,2,6,false);
 		shooterBottom = new Encoder(2,7,2,8,false);
 		
@@ -174,10 +170,10 @@ public:
 //									encoderTurretRotation,
 //									bBallAngle,
 //									shooterArm);
-		
+
 //		shooterSwitch = Switch();
 //		switchAimTrigger = Switch();
-		
+
 		shooterState = false;
 		isShootStick = driverStationControl->GetDigitalIn(1);
 
@@ -185,21 +181,15 @@ public:
 		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight);	// create robot drive base
 		
 		//Robot Server///////////
-			robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
-			if (taskSpawn("tcpServer", 100, 0, 10000, 
-					(FUNCPTR) tcpServer, 0,0,0,0,0,0,0,0,0,0) == ERROR) 
-			{ 
-				/* if taskSpawn fails, close fd and return to top of loop */ 
+		robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
+		if (taskSpawn("tcpServer", 100, 0, 10000, 
+				(FUNCPTR) tcpServer, 0,0,0,0,0,0,0,0,0,0) == ERROR) 
+		{ 
+			/* if taskSpawn fails, close fd and return to top of loop */ 
 
-				perror ("taskSpawn"); 
+			perror ("taskSpawn"); 
 
-			}
-		
-		// init
-		
-		//random
-
-
+		}
 	}
 
 	void processVisionBridge(char * msg) {
@@ -223,13 +213,6 @@ public:
 	{
 	}
 
-	
-	
-	/**
-	 * Runs the motors under driver control with either tank or arcade steering selected
-	 * by a jumper in DS Digin 0. Also an arm will operate based on a joystick Y-axis. 
-	 */
-	
 	void OperatorControl(void)
 	{		
 		char msgBuf[1024];
@@ -243,8 +226,8 @@ public:
 			
 			// Drive //////////////////////////////
 			myRobot->Periodic(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
-			testThingee->Update();
-						// Aim ////////////////////////////////
+
+			// Aim ////////////////////////////////
 			//bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			//bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
 			
@@ -475,6 +458,5 @@ public:
 	//TODO: Play with Rampup code to get everybody's needs
 
 };
-
 
 START_ROBOT_CLASS(Robot2012);
