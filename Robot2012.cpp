@@ -5,6 +5,7 @@
 #include "Util/Switch.h"
 #include "Util/XboxController.h"
 #include "Util/DeadReckoner.h"
+#include <ctime>
 //#include "SubSystems/Shooter.h"
 
 //Robot Server///////////
@@ -18,6 +19,7 @@ MSG_Q_ID getRobotMsgQueue()
 //Robot Class///////////
 class Robot2012 : public SimpleRobot
 {	
+	Timer *newTimer;
 	// Drive System //////////////////////
 	Drivetrain *myRobot;
 
@@ -52,6 +54,8 @@ class Robot2012 : public SimpleRobot
 	Encoder* bBallAngle;
 	Encoder* shooterTop;
 	Encoder* shooterBottom;
+	
+	PIDController *testPID;
 	
 	// Switches
 	
@@ -93,6 +97,8 @@ public:
 
 	Robot2012(void)
 	{
+		newTimer = new Timer();
+		newTimer->Start();
 		speed1 = 0;
 		speed2 = 0;
 		lightValue = 0;
@@ -123,12 +129,17 @@ public:
 		// On robot //
 		// Encoders
 
-		encoderWheelsLeft = new Encoder(1,1,1,2,false,Encoder::k2X);
-		encoderWheelsRight = new Encoder(1,3,1,4,true,Encoder::k2X);
+		encoderWheelsLeft = new Encoder(1,1,1,2,false,Encoder::k1X);
+		encoderWheelsRight = new Encoder(1,3,1,4,true,Encoder::k1X);
 		encoderTurretRotation = new Encoder(2,3,2,4);
 		bBallAngle = new Encoder(2,11,2,12);
 		shooterTop = new Encoder(2,5,2,6,false);
 		shooterBottom = new Encoder(2,7,2,8,false);
+		
+		shooterTop->SetPIDSourceParameter(Encoder::kRate);
+		testPID = new PIDController(0.1, 0.1, 0.1, shooterTop, bBallShooterTop);
+		shooterTop->SetDistancePerPulse(.00005);
+		
 		
 		encoderWheelsLeft->Start();
 		encoderWheelsRight->Start();
@@ -137,7 +148,7 @@ public:
 		shooterTop->Start();
 		shooterBottom->Start();
 		
-		
+		testPID->Enable();
 		
 		// Switches
 //		bBallCollectorSensor = new DigitalInput(2,3);
@@ -190,6 +201,7 @@ public:
 			perror ("taskSpawn"); 
 
 		}
+		
 	}
 
 	void processVisionBridge(char * msg) {
@@ -216,9 +228,14 @@ public:
 	void OperatorControl(void)
 	{		
 		char msgBuf[1024];
+		int encoderTopLast = 0;
+		int encoderBottomLast = 0;
 		int loopCount = 0;
+		
 		while (IsOperatorControl())
 		{
+//			testPID->SetSetpoint(driverStationControl->GetAnalogIn(3));
+			
 			//greenLightControl->SetRaw(10);
 			if (isShootStick != driverStationControl->GetDigitalIn(1))
 			{
@@ -228,24 +245,13 @@ public:
 			myRobot->Periodic(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
 
 			// Aim ////////////////////////////////
-			//bBallRotator->Set(-xboxShoot->GetRightX()/2);
-			//bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
+			bBallRotator->Set(-xboxShoot->GetRightX()/2);
+			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
 			
 			
 //			
-			bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
+//			bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 //			bBallShooterBottom->Set(driverStationControl->GetAnalogIn(1)*-1);
-			
-			
-			//  initial plan ///////////////////////////////////////////////
-//			Driver
-//			-rb & rt load balls
-//			-lb & lt unload balls
-//
-//			Shooter
-//			-lt rt rotation
-//			-y activate elevator
-//			-a shoot
 			
 
 			// Collect and Shoot bBalls///////////
@@ -356,10 +362,19 @@ public:
 
 			// random output stuff!! ////////////
 
+			int encoderTopCurrent = shooterTop->Get();
+			int encoderBottomCurrent = shooterBottom->Get();
+			
+			encoderTopLast = encoderTopCurrent;
+			encoderBottomLast = encoderBottomCurrent;
+			
+			
+			
 			if(loopCount % 50 == 0)
 			{
 				Debug();
 			}
+			
 			loopCount++;
 			Wait(0.01);
 		}
@@ -426,10 +441,8 @@ public:
 	
 	void Debug()
 	{
-		int i = 0;
 //		printf("l:%f", myRobot->leftMotorSetting);
 //		printf("r:%f", myRobot->rightMotorSetting);
-		
 
 //		printf("x:%f", myRobot->PositionX());
 //		printf(" y:%f", myRobot->PositionY());
@@ -445,11 +458,11 @@ public:
 		
 		printf("\r");
 		
-		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tE: %d", shooterTop->GetRate());
-		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bE: %d", shooterBottom->GetRate());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tE: %d", shooterTop->GetRate());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bE: %i", shooterBottom->GetRate());
 		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " eL:%i", myRobot->leftCount);
 		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " eR:%i", myRobot->rightCount);
-//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " tilt:%i", bBallAngle->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " timer:%d", std::clock());
 		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " tilt:%i", encoderTurretRotation->Get());
 		dsLCD->UpdateLCD();
 	}
