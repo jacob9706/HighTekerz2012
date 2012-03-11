@@ -23,6 +23,7 @@ private:
 	Servo* _rampArmServo; 
 	Solenoid* _rampArmSolenoid;
 	UINT startTime;
+	UINT elapsedTime;
 };
 
 #endif

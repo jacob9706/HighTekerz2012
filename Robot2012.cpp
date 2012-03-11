@@ -218,7 +218,6 @@ public:
 			perror ("taskSpawn"); 
 
 		}
-		
 	}
 
 	void processVisionBridge(char * msg) {
@@ -299,7 +298,7 @@ public:
 			encoderBottomLast = encoderBottomCurrent;
 			encoderTimeLast = encoderTimeCurrent;
 			
-			//greenLightControl->SetRaw(10);
+			greenLightControl->SetRaw(10);
 			if (isShootStick != driverStationControl->GetDigitalIn(1))
 			{
 			}

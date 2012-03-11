@@ -26,6 +26,40 @@ void RampArm::Reset()
 
 void RampArm::PeriodicSystem(bool ChangeRampState)
 {
+	if (!IsRampMoving && ChangeRampState)
+	{
+		startTime = GetFPGATime();
+		IsRampMoving = true;
+		if (IsRampUp)
+		{
+			rampGoingDown = true;
+		}
+		else
+		{
+			rampGoingUp = true;
+		}		
+	}
+	
+	if (IsRampMoving)
+	{
+		elapsedTime = GetFPGATime() - startTime;
+		if (elapsedTime > 2000000)
+		{
+			IsRampMoving = false;
+			rampGoingUp = false;
+			rampGoingDown = false;					
+		}
+	}
+	
+	if (rampGoingUp)
+	{
+		
+	}
+	
+	if (rampGoingDown)
+	{
+		
+	}
 }
 
 void testFunction()
