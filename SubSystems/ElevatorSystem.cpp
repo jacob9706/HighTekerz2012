@@ -90,3 +90,14 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 	
 	
 }
+
+void ElevatorSystem::ManualFreezeAll()
+{
+	_lowerElevatorMotor->Set(Relay::kOff);
+	_upperElevatorMotor->Set(Relay::kOff);
+
+	IsRunning = false;	
+	elevatorUp = false;
+	elevatorDown = false;
+	timeStart = 601.0;
+}
