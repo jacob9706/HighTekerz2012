@@ -82,6 +82,7 @@ class Robot2012 : public SimpleRobot
 	// Systems and Support ///////////////////
 
 	ElevatorSystem* robotElevator;
+	RampArm *robotRampArm;
 
 	//Shooter *robotShooter;
 
@@ -189,6 +190,8 @@ public:
 //				bBallElevatorBottomLimit, 
 //				bBallElevatorTopLimit);
 
+		robotRampArm = new RampArm(rampServo,rampArm);
+
 //		robotShooter = new Shooter(bBallShooterTop,
 //									bBallShooterBottom,
 //									bBallRotator,
@@ -239,6 +242,7 @@ public:
 	 */
 	void Autonomous(void)
 	{
+
 	}
 
 	void OperatorControl(void)
@@ -258,10 +262,11 @@ public:
 		
 		Switch rampArmSwitch;
 		Switch rampServoSwitch;
-		
+
+		rampArm->Set(false);
+
 		while (IsOperatorControl())
 		{
-			
 			// get sensor feedback /////////////////////
 
 			//set tilt
@@ -275,6 +280,7 @@ public:
 						break;
 					}
 				}
+				
 				startTimeAngle = GetFPGATime();
 				for (int i = 0; i < 500; i++)
 				{
@@ -298,13 +304,16 @@ public:
 			encoderBottomLast = encoderBottomCurrent;
 			encoderTimeLast = encoderTimeCurrent;
 			
-			greenLightControl->SetRaw(10);
+			//greenLightControl->SetRaw(10);
+
 			if (isShootStick != driverStationControl->GetDigitalIn(1))
 			{
 			}
 			
 			// Drive //////////////////////////////
-			myRobot->Periodic(-xboxDrive->GetLeftY(), -xboxDrive->GetRightY());	 // drive with tank style
+			float speedAdjust = (driverStationControl->GetAnalogIn(4)/5);
+			myRobot->Periodic(-xboxDrive->GetLeftY() * speedAdjust,
+					-xboxDrive->GetRightY() * speedAdjust);	 // drive with tank style
 
 			// Aim ////////////////////////////////
 			bBallRotator->Set(-xboxShoot->GetRightX()/2);
@@ -332,6 +341,7 @@ public:
 				bBallShooterTop->Set(0.0);
 				bBallShooterBottom->Set(0.0);
 			}
+
 			
 			shooterArm->Set(xboxShoot->GetA());
 
@@ -350,6 +360,11 @@ public:
 			}
 			
 			// ELEVATORS //////////////////////////////
+			
+			// elevator system
+			robotRampArm->PeriodicSystem(xboxDrive->GetLeftStickClick());
+
+
 			// REVERSE IS UP ///////////
 			// bottom down
 			if (xboxShoot->GetSelect())
@@ -385,47 +400,49 @@ public:
 				bBallElevatorTop->Set(Relay::kOff);
 			}
 			
+			robotElevator->PeriodicSystem(xboxShoot->GetY());
+			
+
+			
 			//Reset DeadReckoner
 			if(xboxDrive->GetSelect())
 			{
 				myRobot->ResetPosition();
 			}
 			
-			// Air compressor
 			
-			robotElevator->PeriodicSystem(xboxShoot->GetY());
-
+			
 			// ramp arm kick off
-			rampArm->Set(rampArmSwitch.State(xboxDrive->GetLeftStickClick()));
+//			rampArm->Set(rampArmSwitch.State(xboxDrive->GetLeftStickClick()));
 			
 			// ramp arm servo test
 			
-			if (xboxDrive->GetRightStickClick())
-			{
-				rampServo->SetAngle(102.0);
-			}
-			else
-			{
-				rampServo->SetAngle(0.0);
-			}
+//			if (xboxDrive->GetRightStickClick())
+//			{
+//				rampServo->SetAngle(102.0);
+//			}
+//			else
+//			{
+//				rampServo->SetAngle(0.0);
+//			}
 			
 			
 			//Robot Server///////////
 			//printf("%d\n", val);
 			memset(msgBuf, 0, sizeof(char) * 1024);
 			if (msgQReceive(robotQueue, msgBuf, 1024, NO_WAIT) != ERROR) {
-				printf("Got a message: %s\n", msgBuf);
+//				printf("Got a message: %s\n", msgBuf);
 				
 				processVisionBridge(msgBuf);
 				//speed = atoi(msgBuf);
 				//speed /= 1000;
 				//printf("speed: %f", speed);
 			}
-			/*
+			
 			bBallRotator->Set(speed1);
-			bBallShooterBottom->Set(speed2);
+			//bBallShooterBottom->Set(speed2);
 			greenLightControl->SetRaw(lightValue);
-			*/
+			
 			
 			// random output stuff!! ////////////
 			
@@ -453,11 +470,11 @@ public:
 		// =45+((DEGREES(ATAN(height/distance)))/2)
 		*computedAngle = 45.0+((degrees(atan(height/distance)))/2.0);
 
-		printf("a: %f/n",*computedAngle);
+//		printf("a: %f/n",*computedAngle);
 		//32.2 ft/s/s
 		// =SQRT(32.2*(height+(SQRT(height^2+distance^2))))
 		*computedSpeed = sqrt(32.2*(height+(sqrt(pow(height,2.0)+pow(distance,2.0)))));
-		printf("S: %f/n",*computedSpeed);
+//		printf("S: %f/n",*computedSpeed);
 	}
 	
 	float GetFieldHeading(int encoderTicks1, int encoderTicks2)
@@ -513,10 +530,12 @@ public:
 		dsLCD->Clear();
 		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tSpeed: %i", bBallTopWheelSpeed);
 		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bSpeed: %i", bBallBottomWheelSpeed);
-		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " eTop:%i", encoderShooterTop->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " eBot:%i", encoderShooterBottom->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " Angle:%i", bBallAngle);
-		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " voltage: %d", driverStationControl->GetBatteryVoltage());
+		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
+
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", myRobot->Heading());
+		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " X:%f", myRobot->PositionX());
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " Y:%f", myRobot->PositionY());
+
 		dsLCD->UpdateLCD();
 	}
 

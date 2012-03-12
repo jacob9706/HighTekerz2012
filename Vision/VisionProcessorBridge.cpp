@@ -13,7 +13,7 @@
 #define SERVER_PORT_NUM         5001   /* server's port number for bind() */ 
 #define SERVER_WORK_PRIORITY    100    /* priority of server's work task */ 
 #define SERVER_STACK_SIZE       10000  /* stack size of server's work task */ 
-#define SERVER_MAX_CONNECTIONS  4      /* max clients connected at a time */ 
+#define SERVER_MAX_CONNECTIONS  1      /* max clients connected at a time */ 
 #define REQUEST_MSG_SIZE        1024   /* max size of request message */ 
 #define REPLY_MSG_SIZE          500    /* max size of reply message */ 
  
@@ -26,7 +26,7 @@ struct request
 
 
 MSG_Q_ID getRobotMsgQueue();
-VOID tcpServerWorkTask (int sFd, char * address, u_short port);
+STATUS tcpServerWorkTask (int sFd, char * address, u_short port);
 
 /**************************************************************************** 
 * 
@@ -65,7 +65,7 @@ STATUS tcpServer (void)
     serverAddr.sin_port = htons (SERVER_PORT_NUM); 
     serverAddr.sin_addr.s_addr = htonl (INADDR_ANY);
 
-    printf("Starting task\n");
+//    printf("Starting task\n");
     
     /* create a TCP-based socket */
 
@@ -74,7 +74,7 @@ STATUS tcpServer (void)
         perror ("socket"); 
         return (ERROR); 
         }
-    printf("Created socket\n");
+//    printf("Created socket\n");
     /* bind socket to local address */
 
     if (bind (sFd, (struct sockaddr *) &serverAddr, sockAddrSize) == ERROR) 
@@ -84,7 +84,7 @@ STATUS tcpServer (void)
         return (ERROR); 
         }
 
-    printf("Bound\n");
+//    printf("Bound\n");
     
     /* create queue for client connection requests */
 
@@ -95,7 +95,7 @@ STATUS tcpServer (void)
         return (ERROR); 
         }
 
-    printf("Listening\n");
+//    printf("Listening\n");
     
     /* accept new connect requests and spawn tasks to process them */
 
@@ -109,7 +109,7 @@ STATUS tcpServer (void)
             return (ERROR); 
             }
 
-        printf("Spawning task to listen\n");
+//        printf("Spawning task to listen\n");
         
         sprintf (workName, "tTcpWork%d", ix++); 
         if (taskSpawn(workName, SERVER_WORK_PRIORITY, 0, SERVER_STACK_SIZE, 
@@ -135,8 +135,10 @@ STATUS tcpServer (void)
 * 
 * RETURNS: N/A. 
 */ 
- 
-VOID tcpServerWorkTask 
+
+char messageBuf[1024];
+
+STATUS tcpServerWorkTask 
     ( 
     int                 sFd,            /* server's socket fd */ 
     char *              address,        /* client's socket address */ 
@@ -145,13 +147,13 @@ VOID tcpServerWorkTask
     {  
     int                 nRead;          /* number of bytes read */  
  
-    char messageBuf[1024];
+
     
     memset(messageBuf, 0, sizeof(char) * 1024);
     
     /* read client request, display message */ 
  
-    printf("Creating new server work task\n");
+//    printf("Creating new server work task\n");
     
     while ((nRead = fioRead (sFd, messageBuf, 
         sizeof (messageBuf))) > 0) 
@@ -159,8 +161,8 @@ VOID tcpServerWorkTask
     	
     	//memcpy(messageBuf, clientRequest.message, sizeof(char) * nRead);
     	
-        printf ("MESSAGE FROM CLIENT (Internet Address %s, port %d):\n%s\n", 
-                 address, port, messageBuf); 
+//        printf ("MESSAGE FROM CLIENT (Internet Address %s, port %d):\n%s\n", 
+//                 address, port, messageBuf); 
  
         free (address);                 /* free malloc from inet_ntoa() */ 
  
@@ -173,4 +175,6 @@ VOID tcpServerWorkTask
  
     close (sFd);                        /* close server socket connection */ 
     }
+    
+    return(OK);
 }

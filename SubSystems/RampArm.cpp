@@ -9,6 +9,9 @@ RampArm::RampArm(Servo* rampArmServo, Solenoid* rampArmSolenoid)
 	_rampArmServo = rampArmServo;
 	_rampArmSolenoid = rampArmSolenoid;
 	
+	_rampArmServo->SetAngle(0.0);
+	_rampArmSolenoid->Set(false);
+	
 	IsRampUp = true;
 	IsRampMoving = false;
 	rampGoingUp = false;
@@ -43,23 +46,37 @@ void RampArm::PeriodicSystem(bool ChangeRampState)
 	if (IsRampMoving)
 	{
 		elapsedTime = GetFPGATime() - startTime;
-		if (elapsedTime > 2000000)
+
+		if (elapsedTime < 1000000)
+		{
+			if (rampGoingDown)
+			{
+				_rampArmSolenoid->Set(true);
+			}
+			if (rampGoingUp)
+			{
+				_rampArmServo->SetAngle(0.0);
+			}
+		}
+		else if (elapsedTime < 2000000 && elapsedTime >= 1000000)
+		{
+			if (rampGoingDown)
+			{
+				_rampArmServo->SetAngle(SERVO_LOCK_POSITION);
+			}
+			if (rampGoingUp)
+			{
+				_rampArmSolenoid->Set(false);				
+			}
+		}
+		else 
 		{
 			IsRampMoving = false;
 			rampGoingUp = false;
-			rampGoingDown = false;					
-		}
-	}
-	
-	if (rampGoingUp)
-	{
-		
-	}
-	
-	if (rampGoingDown)
-	{
-		
-	}
+			rampGoingDown = false;
+			IsRampUp = !IsRampUp;
+		}	
+	}	
 }
 
 void testFunction()

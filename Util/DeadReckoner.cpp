@@ -33,17 +33,26 @@ void DeadReckoner::ResetPosition()
 	heading = 0.0;
 }
 void DeadReckoner::Update()
-{	
-	leftCountDelta = leftEncoder->Get() - leftCount;
-	rightCountDelta = rightEncoder->Get() - rightCount;
+{
+	int newLeftEncoder = leftEncoder->Get();
+	int newRightEncoder = rightEncoder->Get();
+	
+	leftCountDelta = newLeftEncoder - leftCount;
+	rightCountDelta = newRightEncoder - rightCount;
 
-	leftCount = leftEncoder->Get();
-	rightCount = rightEncoder->Get();
-		
-	heading = (2.0*pi)*(wheelRadius/(wheelWidth))*((leftCount-rightCount)/ticksPerRevolution);
+	heading += (2.0*pi)*(wheelRadius/(wheelWidth))*((leftCountDelta-rightCountDelta)/ticksPerRevolution);
 	x += wheelRadius*sin(heading)*(leftCountDelta+rightCountDelta)*(pi/ticksPerRevolution);
 	y += wheelRadius*cos(heading)*(leftCountDelta+rightCountDelta)*(pi/ticksPerRevolution);
+
+	leftCount = newLeftEncoder;
+	rightCount = newRightEncoder;
+		
+
 }
+
+//encoder reading : -121.85
+//14'3"
+//14'7"
 
 float DeadReckoner::PositionX()
 {
