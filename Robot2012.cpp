@@ -8,6 +8,8 @@
 #include "Util/DeadReckoner.h"
 #include "Settings.h"
 
+const static float TURRET_ROTATION_TICKS = 720;
+
 //#include "SubSystems/Shooter.h"
 
 //Robot Server///////////
@@ -144,13 +146,13 @@ public:
 		encoderWheelsRight = new Encoder(1,3,1,4,true,Encoder::k1X);
 		encoderTurretRotation = new Encoder(2,3,2,4);
 		bBallAngleSensor = new DigitalInput(2,11);
-		encoderShooterTop = new Encoder(2,5,2,6,true);
-		encoderShooterBottom = new Encoder(2,7,2,8,true);
+		encoderShooterTop = new Encoder(2,5,2,6,true,Encoder::k1X);
+		encoderShooterBottom = new Encoder(2,7,2,8,true,Encoder::k1X);
 		
 		encoderShooterTop->SetPIDSourceParameter(Encoder::kRate);
 		testPID = new PIDController(0.1, 0.1, 0.1, encoderShooterTop, bBallShooterTop);
 		encoderShooterTop->SetDistancePerPulse(.00005);
-		
+		encoderShooterBottom->SetDistancePerPulse(.05);
 		
 		encoderWheelsLeft->Start();
 		encoderWheelsRight->Start();
@@ -439,15 +441,18 @@ public:
 				//printf("speed: %f", speed);
 			}
 			
-			bBallRotator->Set(speed1);
+//			bBallRotator->Set(speed1);
 			//bBallShooterBottom->Set(speed2);
 			greenLightControl->SetRaw(lightValue);
 			
 			
 			// random output stuff!! ////////////
 			
+			
+			
 			if(loopCount % 50 == 0)
 			{
+				
 				Debug();
 			}
 			
@@ -528,13 +533,20 @@ public:
 		//printf("Y position: %f  ", myRobot->PositionY() );
 		//printf("Heading: %f", myRobot->Heading() );
 		dsLCD->Clear();
-		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tSpeed: %i", bBallTopWheelSpeed);
-		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bSpeed: %i", bBallBottomWheelSpeed);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " lWheel: %i", myRobot->leftCount);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " rWheel: %i", myRobot->rightCount);
+
+		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %d", encoderShooterTop->GetRate());
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %d", encoderShooterBottom->GetRate());
 		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", myRobot->Heading());
-		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " X:%f", myRobot->PositionX());
-		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " Y:%f", myRobot->PositionY());
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%d", bBallAngle);
+
+//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", myRobot->Heading());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " X:%f", myRobot->PositionX());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " Y:%f", myRobot->PositionY());
+		
+		
 
 		dsLCD->UpdateLCD();
 	}

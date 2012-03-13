@@ -2,7 +2,7 @@
 #include "math.h"
 #include "Encoder.h"
 
-const static double ticksPerRevolution = 780.0;
+const static double ticksPerRevolution = 540.0;
 const static double pi = 3.14159;
 const static double wheelWidth = 30.875;
 const static double wheelRadius = 4.0;
@@ -41,13 +41,11 @@ void DeadReckoner::Update()
 	rightCountDelta = newRightEncoder - rightCount;
 
 	heading += (2.0*pi)*(wheelRadius/(wheelWidth))*((leftCountDelta-rightCountDelta)/ticksPerRevolution);
-	x += wheelRadius*sin(heading)*(leftCountDelta+rightCountDelta)*(pi/ticksPerRevolution);
-	y += wheelRadius*cos(heading)*(leftCountDelta+rightCountDelta)*(pi/ticksPerRevolution);
+	x += wheelRadius*sin(heading)*(leftCountDelta+rightCountDelta)*(pi/ticksPerRevolution); //IN
+	y += wheelRadius*cos(heading)*(leftCountDelta+rightCountDelta)*(pi/ticksPerRevolution); //IN
 
 	leftCount = newLeftEncoder;
 	rightCount = newRightEncoder;
-		
-
 }
 
 //encoder reading : -121.85
