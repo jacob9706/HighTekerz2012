@@ -75,7 +75,7 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 		if (!_upperLimitSwitchOpen->Get())
 		{
 			//stop bottom el
-			
+
 			_lowerElevatorMotor->Set(Relay::kOff);
 
 			elevatorUp = false;

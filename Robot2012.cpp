@@ -20,6 +20,72 @@ MSG_Q_ID getRobotMsgQueue()
 	return robotQueue;
 }
 
+class SamplePIDOutput : public PIDOutput 
+{
+public:
+	SamplePIDOutput(Victor *motor) 
+	{
+		_motor = motor;
+	}
+
+	void PIDWrite(float output) 
+	{
+		_motor->Set(output);
+	}
+private:
+	Victor* _motor;
+};
+
+class SamplePIDSource : public PIDSource 
+{
+public:
+	SamplePIDSource(Encoder* enc) 
+	{
+		//"K" is a tuning constant, which you use to adjust the "strength" of the filter. K must be in the range zero to +1. When K=0, there is no filtering. When K=1, the filtering is so "strong" that the filtered value never changes.
+		TUNING_CONSTANT = .07;
+		SCALE = 100000;
+
+		_enc = enc;
+		encoderCurrent = 0;
+		encoderLast = 0;
+		timeLast = GetFPGATime();
+		timeCurrent = 0;
+		rate = 0;
+		newRate = 0;
+	}
+
+	double PIDGet()
+	{
+		return SCALE * rate;
+	}
+	
+	void Update()
+	{
+		encoderCurrent = _enc->Get();
+		timeCurrent = GetFPGATime();
+		newRate = (encoderCurrent-encoderLast) / (timeCurrent - timeLast);
+
+		//new_filtered_value = K*previous_filtered_value + (1-K)* new_sample
+		rate = (TUNING_CONSTANT * rate) + ((1-TUNING_CONSTANT) * newRate);
+
+		encoderLast = encoderCurrent;
+		timeLast = timeCurrent;
+	}
+
+	double TUNING_CONSTANT;	
+	double SCALE;
+private:
+	Encoder* _enc;
+
+	int encoderCurrent ;
+	int encoderLast;
+	UINT timeLast;
+	UINT timeCurrent;
+	double rate;
+	double newRate;
+};
+
+
 //Robot Class///////////
 class Robot2012 : public SimpleRobot
 {	
@@ -27,7 +93,7 @@ class Robot2012 : public SimpleRobot
 	Drivetrain *myRobot;
 
 	// Outputs ///////////////////////////
-	
+
 	// Vision
 	PWM* greenLightControl;	
 
@@ -111,7 +177,8 @@ public:
 		speed1 = 0;
 		speed2 = 0;
 		lightValue = 0;
-		
+
+		AxisCamera::GetInstance();
 		// Outputs //////////////////////////
 		// Vision
 		greenLightControl = new  PWM(1,6);
@@ -149,10 +216,12 @@ public:
 		encoderShooterTop = new Encoder(2,5,2,6,true,Encoder::k1X);
 		encoderShooterBottom = new Encoder(2,7,2,8,true,Encoder::k1X);
 		
-		encoderShooterTop->SetPIDSourceParameter(Encoder::kRate);
 		testPID = new PIDController(0.1, 0.1, 0.1, encoderShooterTop, bBallShooterTop);
-		encoderShooterTop->SetDistancePerPulse(.00005);
-		encoderShooterBottom->SetDistancePerPulse(.05);
+		encoderShooterTop->SetDistancePerPulse(100);
+		encoderShooterBottom->SetDistancePerPulse(1000);
+		encoderShooterTop->SetPIDSourceParameter(Encoder::kRate);
+		encoderShooterBottom->SetPIDSourceParameter(Encoder::kRate);
+		
 		
 		encoderWheelsLeft->Start();
 		encoderWheelsRight->Start();
@@ -212,16 +281,15 @@ public:
 
 		// Drive System /////////////////////
 		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight);	// create robot drive base
-		
+
 		//Robot Server///////////
 		robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
 		if (taskSpawn("tcpServer", 100, 0, 10000, 
 				(FUNCPTR) tcpServer, 0,0,0,0,0,0,0,0,0,0) == ERROR) 
-		{ 
+		{
 			/* if taskSpawn fails, close fd and return to top of loop */ 
 
 			perror ("taskSpawn"); 
-
 		}
 	}
 
@@ -266,6 +334,19 @@ public:
 		Switch rampServoSwitch;
 
 		rampArm->Set(false);
+		
+		
+		PIDController turnController( 0.1, // P
+				0.00, // I
+				0.5, // D
+				encoderShooterTop, // source
+				bBallShooterTop, // output
+				0.005); // period
+		turnController.SetInputRange(-360.0, 360.0);
+		turnController.SetOutputRange(-0.6, 0.6);
+		turnController.SetTolerance(1.0 / 90.0 * 100);
+		turnController.Disable();
+
 
 		while (IsOperatorControl())
 		{
@@ -282,8 +363,7 @@ public:
 						break;
 					}
 				}
-				
-				startTimeAngle = GetFPGATime();
+								startTimeAngle = GetFPGATime();
 				for (int i = 0; i < 500; i++)
 				{
 					if (bBallAngleSensor->Get() == 1)
@@ -298,10 +378,17 @@ public:
 			encoderTimeCurrent = GetFPGATime();
 			encoderTopCurrent = encoderShooterTop->Get();
 			encoderBottomCurrent = encoderShooterBottom->Get();
-			
-			bBallTopWheelSpeed = (encoderTopCurrent-encoderTopLast)*100000 / ((encoderTimeCurrent - encoderTimeLast));
-			bBallBottomWheelSpeed = (encoderBottomCurrent-encoderBottomLast)*100000 / ((encoderTimeCurrent - encoderTimeLast));
-			
+
+			//new_filtered_value = K*previous_filtered_value + (1-K)* new_sample
+			//"K" is a tuning constant, which you use to adjust the "strength" of the filter. K must be in the range zero to +1. When K=0, there is no filtering. When K=1, the filtering is so "strong" that the filtered value never changes.
+
+			float tuningConstant = .05;
+			bBallTopWheelSpeed = tuningConstant * bBallTopWheelSpeed + 
+					(1-tuningConstant) * (encoderTopCurrent-encoderTopLast)*100000 / ((encoderTimeCurrent - encoderTimeLast));
+			bBallBottomWheelSpeed = tuningConstant * bBallBottomWheelSpeed + 
+					(1-tuningConstant) * (encoderBottomCurrent-encoderBottomLast)*100000 / ((encoderTimeCurrent - encoderTimeLast));
+
+
 			encoderTopLast = encoderTopCurrent;
 			encoderBottomLast = encoderBottomCurrent;
 			encoderTimeLast = encoderTimeCurrent;
@@ -536,8 +623,8 @@ public:
 //		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " lWheel: %i", myRobot->leftCount);
 //		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " rWheel: %i", myRobot->rightCount);
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %d", encoderShooterTop->GetRate());
-		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %d", encoderShooterBottom->GetRate());
+		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %d", bBallTopWheelSpeed);
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %d", bBallBottomWheelSpeed);
 		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
 
 		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%d", bBallAngle);
