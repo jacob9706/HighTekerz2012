@@ -42,8 +42,8 @@ public:
 	SamplePIDSource(Encoder* enc) 
 	{
 		//"K" is a tuning constant, which you use to adjust the "strength" of the filter. K must be in the range zero to +1. When K=0, there is no filtering. When K=1, the filtering is so "strong" that the filtered value never changes.
-		TUNING_CONSTANT = .07;
-		SCALE = 100000;
+		TUNING_CONSTANT = .8;
+		SCALE = 100000.0;
 
 		_enc = enc;
 		encoderCurrent = 0;
@@ -53,17 +53,22 @@ public:
 		rate = 0;
 		newRate = 0;
 	}
+	
+	int hi()
+	{
+		return encoderLast;
+	}
 
 	double PIDGet()
 	{
-		return SCALE * rate;
+		return rate;
 	}
 	
 	void Update()
 	{
 		encoderCurrent = _enc->Get();
 		timeCurrent = GetFPGATime();
-		newRate = (encoderCurrent-encoderLast) / (timeCurrent - timeLast);
+		newRate = (encoderCurrent-encoderLast)*SCALE / (timeCurrent - timeLast);
 
 		//new_filtered_value = K*previous_filtered_value + (1-K)* new_sample
 		rate = (TUNING_CONSTANT * rate) + ((1-TUNING_CONSTANT) * newRate);
@@ -126,14 +131,14 @@ class Robot2012 : public SimpleRobot
 	Encoder* encoderShooterBottom;
 	DigitalInput* bBallAngleSensor;
 	
-	PIDController *testPID;
-	
 	// Switches
 	
 	DigitalInput *bBallElevatorTopLimit;
 	DigitalInput *bBallElevatorBottomLimit;
 	Switch* shooterSwitch;
 	Switch* switchAimTrigger;
+	
+	AnalogChannel* tilt;
 
 	// Other
 	ADXL345_I2C *accel;
@@ -151,13 +156,19 @@ class Robot2012 : public SimpleRobot
 
 	ElevatorSystem* robotElevator;
 	RampArm *robotRampArm;
+	
+	SamplePIDSource* PIDTopShooterSource;
+	SamplePIDOutput* PIDTopShooterOut;
+
+	SamplePIDSource* PIDBottomShooterSource;
+	SamplePIDOutput* PIDBottomShooterOut;
 
 	//Shooter *robotShooter;
 
-	bool isShootStick;
 	bool shooterState;
 	
 	double speed1, speed2;
+	double PIDReading;
 	UINT8 lightValue;
 	
 	int bBallTopWheelSpeed,
@@ -165,104 +176,41 @@ class Robot2012 : public SimpleRobot
 		bBallAngle;
 	
 public:
-	/**
-	 * Create an instance of a RobotDrive with left and right motors plugged into PWM
-	 */
+    void SetupTurret()
+    {
+        bBallPitchMotor = new Victor(2, 3);
+        bBallRotator = new Victor(2, 4);
+        bBallShooterTop = new Victor(2, 1);
+        bBallShooterBottom = new Victor(2, 2);
+        shooterArm = new Solenoid(1);
+        encoderTurretRotation = new Encoder(2, 3, 2, 4);
+        bBallAngleSensor = new DigitalInput(2, 11);
+        encoderShooterTop = new Encoder(2, 5, 2, 6, true, Encoder::k1X);
+        encoderShooterBottom = new Encoder(2, 7, 2, 8, true, Encoder::k1X);
+        
+        tilt = new AnalogChannel(1);
 
-	Robot2012(void)
-	{
-		bBallTopWheelSpeed = 0;
-		bBallBottomWheelSpeed = 0;
-		bBallAngle = 0;
-		speed1 = 0;
-		speed2 = 0;
-		lightValue = 0;
+//        encoderShooterTop->SetDistancePerPulse(100);
+//        encoderShooterBottom->SetDistancePerPulse(1000);
+//        encoderShooterTop->SetPIDSourceParameter(Encoder::kRate);
+//        encoderShooterBottom->SetPIDSourceParameter(Encoder::kRate);
+        encoderTurretRotation->Start();
+        encoderShooterTop->Start();
+        encoderShooterBottom->Start();
 
-		AxisCamera::GetInstance();
-		// Outputs //////////////////////////
-		// Vision
-		greenLightControl = new  PWM(1,6);
-		greenLightControl->SetPeriodMultiplier(PWM::kPeriodMultiplier_1X);
-		greenLightControl->EnableDeadbandElimination(false);
+        PIDTopShooterSource = new SamplePIDSource(encoderShooterTop);
+        PIDTopShooterOut = new SamplePIDOutput(bBallShooterTop);
 
-		// Motors
-		bBallPitchMotor = new Victor(2,3);
-		bBallRotator = new Victor(2,4);
-		bBallShooterTop = new Victor(2,1);
-		bBallShooterBottom = new Victor(2,2);
-		
-		bBallElevatorBottom = new Relay(2,1,Relay::kBothDirections);
-		bBallElevatorTop = new Relay(2,2,Relay::kBothDirections);
-		bBallCollector = new Victor(2,5);
-		rampServo = new Servo(2,6);
+        PIDBottomShooterSource = new SamplePIDSource(encoderShooterBottom);
+        PIDBottomShooterOut = new SamplePIDOutput(bBallShooterBottom);
 
-//		mockRelay = new Relay(2,5,Relay::kBothDirections);
+        bBallTopWheelSpeed = 0;
+        bBallBottomWheelSpeed = 0;
+        bBallAngle = 0;
 
-		// Air
-		airCompressor = new Compressor(1,10,2,3);
-		airCompressor->Start();
-		
-		shooterArm = new Solenoid(1);
-		rampArm = new Solenoid(2);
-		
-		// Inputs //////////////////////////
-		// On robot //
-		// Encoders
-
-		encoderWheelsLeft = new Encoder(1,1,1,2,false,Encoder::k1X);
-		encoderWheelsRight = new Encoder(1,3,1,4,true,Encoder::k1X);
-		encoderTurretRotation = new Encoder(2,3,2,4);
-		bBallAngleSensor = new DigitalInput(2,11);
-		encoderShooterTop = new Encoder(2,5,2,6,true,Encoder::k1X);
-		encoderShooterBottom = new Encoder(2,7,2,8,true,Encoder::k1X);
-		
-		testPID = new PIDController(0.1, 0.1, 0.1, encoderShooterTop, bBallShooterTop);
-		encoderShooterTop->SetDistancePerPulse(100);
-		encoderShooterBottom->SetDistancePerPulse(1000);
-		encoderShooterTop->SetPIDSourceParameter(Encoder::kRate);
-		encoderShooterBottom->SetPIDSourceParameter(Encoder::kRate);
-		
-		
-		encoderWheelsLeft->Start();
-		encoderWheelsRight->Start();
-		encoderTurretRotation->Start();
-		encoderShooterTop->Start();
-		encoderShooterBottom->Start();
-		
-		testPID->Enable();
-		
-		// Switches
-//		bBallCollectorSensor = new DigitalInput(2,3);
-//		bBallElevatorSensor = new DigitalInput(2,4);
 //		bBallBrushSensor = new DigitalInput(2,5);
-		bBallElevatorTopLimit = new DigitalInput(2,2);
-		bBallElevatorBottomLimit = new DigitalInput(2,1);
-		
-		// Other
-//		accel = new ADXL345_I2C(1);
-//		gyro = new Gyro(1);
-		
-		// Driver Station //
-		
-		driverStationControl = DriverStation::GetInstance();
-		dsLCD = DriverStationLCD::GetInstance();
-		
-		xboxDrive = new XboxController(1);
-		xboxShoot = new XboxController(2);
-		
+
 		// Systems and Support ///////////////////
-		robotElevator = new ElevatorSystem(bBallElevatorBottom, 
-				bBallElevatorTop, 
-				bBallElevatorBottomLimit, 
-				bBallElevatorTopLimit);
-
-//		robotElevator = new ElevatorSystem(bBallElevatorTop, 
-//				mockRelay, 
-//				bBallElevatorBottomLimit, 
-//				bBallElevatorTopLimit);
-
-		robotRampArm = new RampArm(rampServo,rampArm);
-
 //		robotShooter = new Shooter(bBallShooterTop,
 //									bBallShooterBottom,
 //									bBallRotator,
@@ -273,14 +221,24 @@ public:
 //									bBallAngle,
 //									shooterArm);
 
-//		shooterSwitch = Switch();
-//		switchAimTrigger = Switch();
-
 		shooterState = false;
-		isShootStick = driverStationControl->GetDigitalIn(1);
 
-		// Drive System /////////////////////
-		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight);	// create robot drive base
+		PIDReading = 0.0;        		
+    }
+
+    void SetupCameras()
+    {
+        //setup cameras
+        AxisCamera::GetInstance();
+        // Outputs //////////////////////////
+        // Vision
+        lightValue = 0;
+        greenLightControl = new PWM(1, 6);
+        greenLightControl->SetPeriodMultiplier(PWM::kPeriodMultiplier_1X);
+        greenLightControl->EnableDeadbandElimination(false);
+
+        speed1 = 0;
+        speed2 = 0;
 
 		//Robot Server///////////
 		robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
@@ -291,6 +249,74 @@ public:
 
 			perror ("taskSpawn"); 
 		}
+    }
+
+    void SetupCollectorElevator()
+    {
+        // collector/elevator
+        bBallElevatorBottom = new Relay(2, 1, Relay::kBothDirections);
+        bBallElevatorTop = new Relay(2, 2, Relay::kBothDirections);
+        bBallCollector = new Victor(2, 5);
+        //		mockRelay = new Relay(2,5,Relay::kBothDirections);
+        //		bBallCollectorSensor = new DigitalInput(2,3);
+        //		bBallElevatorSensor = new DigitalInput(2,4);
+        bBallElevatorTopLimit = new DigitalInput(2, 2);
+        bBallElevatorBottomLimit = new DigitalInput(2, 1);
+        //		robotElevator = new ElevatorSystem(bBallElevatorTop, 
+        //				mockRelay, 
+        //				bBallElevatorBottomLimit, 
+        //				bBallElevatorTopLimit);
+        robotElevator = new ElevatorSystem(bBallElevatorBottom, bBallElevatorTop, bBallElevatorBottomLimit, bBallElevatorTopLimit);
+    }
+
+    void SetupArm()
+    {
+        // ramp
+        rampServo = new Servo(2, 6);
+        rampArm = new Solenoid(2);
+        robotRampArm = new RampArm(rampServo, rampArm);
+    }
+
+    void SetupRobot()
+    {
+        // On robot //
+        encoderWheelsLeft = new Encoder(1, 1, 1, 2, false, Encoder::k1X);
+        encoderWheelsRight = new Encoder(1, 3, 1, 4, true, Encoder::k1X);
+        encoderWheelsLeft->Start();
+        encoderWheelsRight->Start();
+        // Drive System /////////////////////
+        myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight); // create robot drive base
+        // other
+        // Air
+        airCompressor = new Compressor(1, 10, 2, 3);
+        airCompressor->Start();
+
+		// Other
+//		accel = new ADXL345_I2C(1);
+//		gyro = new Gyro(1);
+		
+    }
+
+    void SetupDriverStation()
+    {
+        // Driver Station //
+        driverStationControl = DriverStation::GetInstance();
+        dsLCD = DriverStationLCD::GetInstance();
+        xboxDrive = new XboxController(1);
+        xboxShoot = new XboxController(2);
+    }
+
+    /**
+	 * Create an instance of a RobotDrive with left and right motors plugged into PWM
+	 */
+    Robot2012(void)
+    {
+        SetupTurret();
+        SetupCameras();
+        SetupCollectorElevator();
+        SetupArm();
+        SetupRobot();
+        SetupDriverStation();		
 	}
 
 	void processVisionBridge(char * msg) {
@@ -318,8 +344,6 @@ public:
 	void OperatorControl(void)
 	{
 		// any setup?
-		robotElevator->ManualFreezeAll();
-		
 		char msgBuf[1024];
 		int encoderTopLast = 0;
 		int encoderBottomLast = 0;
@@ -334,24 +358,27 @@ public:
 		Switch rampServoSwitch;
 
 		rampArm->Set(false);
+		robotElevator->ManualFreezeAll();
 		
-		
-		PIDController turnController( 0.1, // P
+		PIDController speedcontroller( 0.1, // P
 				0.00, // I
 				0.5, // D
-				encoderShooterTop, // source
-				bBallShooterTop, // output
+				PIDTopShooterSource, // source
+				PIDTopShooterOut, // output
 				0.005); // period
-		turnController.SetInputRange(-360.0, 360.0);
-		turnController.SetOutputRange(-0.6, 0.6);
-		turnController.SetTolerance(1.0 / 90.0 * 100);
-		turnController.Disable();
-
+		speedcontroller.SetInputRange(0, 1100.0);
+		speedcontroller.SetOutputRange(0, 1);
+		speedcontroller.SetTolerance(1.0 / 90.0 * 100);
+		speedcontroller.Enable();
 
 		while (IsOperatorControl())
 		{
+			PIDTopShooterSource->Update();
+			PIDBottomShooterSource->Update();
+			PIDReading = speedcontroller.GetError();
 			// get sensor feedback /////////////////////
 
+//turret			
 			//set tilt
 			if (bBallAngleSensor->Get() == 1)
 			{
@@ -382,7 +409,7 @@ public:
 			//new_filtered_value = K*previous_filtered_value + (1-K)* new_sample
 			//"K" is a tuning constant, which you use to adjust the "strength" of the filter. K must be in the range zero to +1. When K=0, there is no filtering. When K=1, the filtering is so "strong" that the filtered value never changes.
 
-			float tuningConstant = .05;
+			float tuningConstant = .07;
 			bBallTopWheelSpeed = tuningConstant * bBallTopWheelSpeed + 
 					(1-tuningConstant) * (encoderTopCurrent-encoderTopLast)*100000 / ((encoderTimeCurrent - encoderTimeLast));
 			bBallBottomWheelSpeed = tuningConstant * bBallBottomWheelSpeed + 
@@ -392,22 +419,10 @@ public:
 			encoderTopLast = encoderTopCurrent;
 			encoderBottomLast = encoderBottomCurrent;
 			encoderTimeLast = encoderTimeCurrent;
-			
-			//greenLightControl->SetRaw(10);
-
-			if (isShootStick != driverStationControl->GetDigitalIn(1))
-			{
-			}
-			
-			// Drive //////////////////////////////
-			float speedAdjust = (driverStationControl->GetAnalogIn(4)/5);
-			myRobot->Periodic(-xboxDrive->GetLeftY() * speedAdjust,
-					-xboxDrive->GetRightY() * speedAdjust);	 // drive with tank style
 
 			// Aim ////////////////////////////////
 			bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
-			
 			// Collect and Shoot bBalls///////////
 
 			if(xboxShoot->GetRB() || xboxShoot->GetRightTrigger() < -.1)
@@ -422,17 +437,28 @@ public:
 			
 			if (shooterState)
 			{
+//				speedcontroller.SetSetpoint(800.0);
 				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2)*-1);
 			}
 			else
 			{
+//				speedcontroller.SetSetpoint(0.0);
 				bBallShooterTop->Set(0.0);
 				bBallShooterBottom->Set(0.0);
 			}
 
 			
 			shooterArm->Set(xboxShoot->GetA());
+//			
+
+			//greenLightControl->SetRaw(10);
+
+			// Drive //////////////////////////////
+			float speedAdjust = (driverStationControl->GetAnalogIn(4)/5);
+			myRobot->Periodic(-xboxDrive->GetLeftY() * speedAdjust,
+					-xboxDrive->GetRightY() * speedAdjust);	 // drive with tank style
+
 
 			// collector ///////////////////////////////
 			if (xboxDrive->GetLB() || xboxDrive->GetLeftTrigger() > .1)
@@ -569,44 +595,6 @@ public:
 //		printf("S: %f/n",*computedSpeed);
 	}
 	
-	float GetFieldHeading(int encoderTicks1, int encoderTicks2)
-	{
-		int wheelRadius = 4;//Wheel Radius (Center Wheel)
-		float axleWidthCenterToCenter = 30+(7/8);		
-
-		double pi = 3.14159;
-		float heading = (2*pi)*(wheelRadius/axleWidthCenterToCenter)*(encoderTicks1-encoderTicks2);
-		return heading;
-	}
-	
-	float GetFieldy(int encoderTicks1, int encoderTicks2, float heading)
-	{
-		int wheelRadius = 4;//Wheel Radius (Center Wheel)
-		int encoderTicksPerRotation = 360;
-		int transmitionSprocketTeeth = 12;
-		int wheelSprocketTeeth = 26;
-		int ticksPerRotation = (wheelSprocketTeeth/transmitionSprocketTeeth)*encoderTicksPerRotation; //ticks per rotation of wheel
-
-		double pi = 3.14159;
-
-		float y = wheelRadius*sin(heading)*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
-		return y;
-	}
-	
-	float GetFieldX(int encoderTicks1, int encoderTicks2, float heading)
-	{
-		int wheelRadius = 4;//Wheel Radius (Center Wheel)
-		int encoderTicksPerRotation = 360;
-		int transmitionSprocketTeeth = 12;
-		int wheelSprocketTeeth = 26;
-		int ticksPerRotation = (wheelSprocketTeeth/transmitionSprocketTeeth)*encoderTicksPerRotation; //ticks per rotation of wheel
-
-		double pi = 3.14159;
-
-		float x = wheelRadius*cos(heading)*(encoderTicks1+encoderTicks2)*(pi/ticksPerRotation);
-		return x;
-	}
-	
 	void Debug()
 	{
 //		printf("l:%f", myRobot->leftMotorSetting);
@@ -623,11 +611,18 @@ public:
 //		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " lWheel: %i", myRobot->leftCount);
 //		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " rWheel: %i", myRobot->rightCount);
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %d", bBallTopWheelSpeed);
-		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %d", bBallBottomWheelSpeed);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %d", bBallTopWheelSpeed);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %d", bBallBottomWheelSpeed);
+
+//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", bBallAngle);
+
+		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %f", PIDTopShooterSource->PIDGet());
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %f", PIDBottomShooterSource->PIDGet());
 		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%d", bBallAngle);
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
+		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " lWheel: %i", myRobot->leftCount);
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " rWheel: %i", myRobot->rightCount);
 
 //		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", myRobot->Heading());
 //		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " X:%f", myRobot->PositionX());
