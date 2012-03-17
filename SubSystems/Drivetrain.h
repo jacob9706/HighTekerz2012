@@ -17,6 +17,8 @@ public:
 	float Velocity();
 	float rightMotorSetting;
 	float leftMotorSetting;
+	float scaledRight;
+	float scaledLeft;
 private:
 };
 

@@ -39,27 +39,43 @@ float NewSpeed(float oldSpeed,float newRequestedSpeed)
 	//	}
 }
 
+
 //Returns 1 if positive, -1 if negative, 0 if zero
-int Sign(float number)
+float Sign(float number)
 {
 	if(number >0)
 	{
-		return 1;
+		return 1.0;
 	}
 	else if(number<0)
 	{
-		return -1;
+		return -1.0;
 	}
 	else
 	{
-		return 0;
+		return 0.0;
 	}
+}
+
+float ScaleDriving(float inSpeed)
+{
+	float calculatedSpeed;
+	if (fabs(inSpeed)<0.1)
+	{
+		calculatedSpeed = inSpeed*4;
+	}
+	else
+	{
+		(Sign(inSpeed)*(inSpeed*inSpeed*60/99))+(inSpeed*39/99);
+	}
+	
+	return calculatedSpeed;
 }
 
 void Drivetrain::Periodic(float moveLeftInput, float moveRightInput)
 {
-	int leftSign = Sign(moveLeftInput);
-	int rightSign = Sign(moveRightInput);
+	float leftSign = Sign(moveLeftInput);
+	float rightSign = Sign(moveRightInput);
 
 	//abs of inputs are within allowable tolerence
 	if (fabs(moveLeftInput - moveRightInput) <= allowableInputDifference)
@@ -82,12 +98,13 @@ void Drivetrain::Periodic(float moveLeftInput, float moveRightInput)
 		}
 	}
 
-
 	float newLeftSpeed = NewSpeed(leftMotorSetting, moveLeftInput);
 	float newRightSpeed = NewSpeed(rightMotorSetting, moveRightInput);
 
+	scaledLeft = newLeftSpeed;
+	scaledRight = newRightSpeed;
 
-	RobotDrive::TankDrive(newLeftSpeed, newRightSpeed);
+	RobotDrive::TankDrive(scaledLeft, scaledRight);
 
 	leftMotorSetting = newLeftSpeed;
 	rightMotorSetting = newRightSpeed;

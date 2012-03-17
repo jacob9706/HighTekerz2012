@@ -345,12 +345,6 @@ public:
 	{
 		// any setup?
 		char msgBuf[1024];
-		int encoderTopLast = 0;
-		int encoderBottomLast = 0;
-		int encoderTopCurrent = 0;
-		int encoderBottomCurrent = 0;
-		UINT encoderTimeLast = GetFPGATime();
-		UINT encoderTimeCurrent = 0;
 		int loopCount = 0;
 		int startTimeAngle = 0;
 		
@@ -369,7 +363,9 @@ public:
 		speedcontroller.SetInputRange(0, 1100.0);
 		speedcontroller.SetOutputRange(0, 1);
 		speedcontroller.SetTolerance(1.0 / 90.0 * 100);
+		speedcontroller.SetContinuous(false);
 		speedcontroller.Enable();
+		
 
 		while (IsOperatorControl())
 		{
@@ -401,25 +397,6 @@ public:
 				bBallAngle = GetFPGATime() - startTimeAngle;					
 			}
 			
-			// set speed of shooters
-			encoderTimeCurrent = GetFPGATime();
-			encoderTopCurrent = encoderShooterTop->Get();
-			encoderBottomCurrent = encoderShooterBottom->Get();
-
-			//new_filtered_value = K*previous_filtered_value + (1-K)* new_sample
-			//"K" is a tuning constant, which you use to adjust the "strength" of the filter. K must be in the range zero to +1. When K=0, there is no filtering. When K=1, the filtering is so "strong" that the filtered value never changes.
-
-			float tuningConstant = .07;
-			bBallTopWheelSpeed = tuningConstant * bBallTopWheelSpeed + 
-					(1-tuningConstant) * (encoderTopCurrent-encoderTopLast)*100000 / ((encoderTimeCurrent - encoderTimeLast));
-			bBallBottomWheelSpeed = tuningConstant * bBallBottomWheelSpeed + 
-					(1-tuningConstant) * (encoderBottomCurrent-encoderBottomLast)*100000 / ((encoderTimeCurrent - encoderTimeLast));
-
-
-			encoderTopLast = encoderTopCurrent;
-			encoderBottomLast = encoderBottomCurrent;
-			encoderTimeLast = encoderTimeCurrent;
-
 			// Aim ////////////////////////////////
 			bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
@@ -437,14 +414,14 @@ public:
 			
 			if (shooterState)
 			{
-//				speedcontroller.SetSetpoint(800.0);
-				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
+				speedcontroller.SetSetpoint(800.0);
+//				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2)*-1);
 			}
 			else
 			{
-//				speedcontroller.SetSetpoint(0.0);
-				bBallShooterTop->Set(0.0);
+				speedcontroller.SetSetpoint(0.0);
+//				bBallShooterTop->Set(0.0);
 				bBallShooterBottom->Set(0.0);
 			}
 
@@ -618,9 +595,12 @@ public:
 
 		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %f", PIDTopShooterSource->PIDGet());
 		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %f", PIDBottomShooterSource->PIDGet());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " left: %f", myRobot->scaledLeft);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " right: %f", myRobot->scaledRight);
+		
 		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
-
 		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
+
 		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " lWheel: %i", myRobot->leftCount);
 		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " rWheel: %i", myRobot->rightCount);
 
