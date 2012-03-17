@@ -360,8 +360,8 @@ public:
 				PIDTopShooterSource, // source
 				PIDTopShooterOut, // output
 				0.005); // period
-		speedcontroller.SetInputRange(0, 1100.0);
-		speedcontroller.SetOutputRange(0, 1);
+		speedcontroller.SetInputRange(-1, 1);
+		speedcontroller.SetOutputRange(-1, 1);
 		speedcontroller.SetTolerance(1.0 / 90.0 * 100);
 		speedcontroller.SetContinuous(false);
 		speedcontroller.Enable();
