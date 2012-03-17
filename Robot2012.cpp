@@ -39,12 +39,13 @@ private:
 class SamplePIDSource : public PIDSource 
 {
 public:
+	double PIDSCALE;
 	SamplePIDSource(Encoder* enc) 
 	{
 		//"K" is a tuning constant, which you use to adjust the "strength" of the filter. K must be in the range zero to +1. When K=0, there is no filtering. When K=1, the filtering is so "strong" that the filtered value never changes.
 		TUNING_CONSTANT = .8;
 		SCALE = 100000.0;
-
+		PIDSCALE = 1;
 		_enc = enc;
 		encoderCurrent = 0;
 		encoderLast = 0;
@@ -61,7 +62,7 @@ public:
 
 	double PIDGet()
 	{
-		return rate;
+		return rate / PIDSCALE;
 	}
 	
 	void Update()
@@ -200,7 +201,8 @@ public:
 
         PIDTopShooterSource = new SamplePIDSource(encoderShooterTop);
         PIDTopShooterOut = new SamplePIDOutput(bBallShooterTop);
-
+        PIDTopShooterSource->PIDSCALE = 1100.0;
+        
         PIDBottomShooterSource = new SamplePIDSource(encoderShooterBottom);
         PIDBottomShooterOut = new SamplePIDOutput(bBallShooterBottom);
 
@@ -280,8 +282,8 @@ public:
     void SetupRobot()
     {
         // On robot //
-        encoderWheelsLeft = new Encoder(1, 1, 1, 2, false, Encoder::k1X);
-        encoderWheelsRight = new Encoder(1, 3, 1, 4, true, Encoder::k1X);
+        encoderWheelsLeft = new Encoder(1, 1, 1, 2, true);
+        encoderWheelsRight = new Encoder(1, 3, 1, 4, false);
         encoderWheelsLeft->Start();
         encoderWheelsRight->Start();
         // Drive System /////////////////////
@@ -338,7 +340,26 @@ public:
 	 */
 	void Autonomous(void)
 	{
-
+		while(IsAutonomous() && IsEnabled())
+		{
+			if(((myRobot->rightCount + myRobot->leftCount) / 2) < 700)
+			{
+				if(myRobot->leftCount - myRobot->rightCount > 10)
+				{
+					myRobot->Periodic(0.2, 0.5);
+				}
+				else if(myRobot->rightCount - myRobot->leftCount > 10)
+				{
+					myRobot->Periodic(0.5, 0.2);
+				}
+				else
+				{
+					myRobot->Periodic(0.5, 0.5);
+				}
+			}
+			Debug();
+			Wait(.005);
+		}
 	}
 
 	void OperatorControl(void)
@@ -414,7 +435,7 @@ public:
 			
 			if (shooterState)
 			{
-				speedcontroller.SetSetpoint(800.0);
+				speedcontroller.SetSetpoint(0.8);
 //				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2)*-1);
 			}
