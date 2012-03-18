@@ -19,11 +19,9 @@
  
 /* structure for requests from clients to server */ 
 struct request 
-    {   
+{   
     char message[REQUEST_MSG_SIZE];    /* message buffer */  
-    };
-
-
+};
 
 MSG_Q_ID getRobotMsgQueue();
 STATUS tcpServerWorkTask (int sFd, char * address, u_short port);
