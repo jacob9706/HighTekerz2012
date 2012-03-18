@@ -461,12 +461,14 @@ public:
 			// bottom down
 			if (xboxShoot->GetSelect())
 			{
+				robotElevator->ManualFreezeAll();
 				bBallElevatorBottom->Set(Relay::kOn);
 				bBallElevatorBottom->Set(Relay::kForward);						
 			}
 			// bottom up
 			else if (xboxShoot->GetStart())
 			{
+				robotElevator->ManualFreezeAll();
 				bBallElevatorBottom->Set(Relay::kOn);
 				bBallElevatorBottom->Set(Relay::kReverse);						
 			}
