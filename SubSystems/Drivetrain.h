@@ -12,14 +12,18 @@ public:
 			Encoder* rightEncoder
 			);
 	~Drivetrain();
-	void Periodic(float moveLeft, float moveRight);
+	void Periodic(float moveLeft, float moveRight, bool enableMatchEncoders = false);
 	float AngularVelocity();
 	float Velocity();
 	float rightMotorSetting;
 	float leftMotorSetting;
 	float scaledRight;
 	float scaledLeft;
+	bool speedMatch;
+	int speedMatchLeftCounterStart;
+	int speedMatchRightCounterStart;
 private:
+
 };
 
 #endif

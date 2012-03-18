@@ -54,7 +54,7 @@ public:
 		rate = 0;
 		newRate = 0;
 	}
-	
+
 	int hi()
 	{
 		return encoderLast;
@@ -64,7 +64,7 @@ public:
 	{
 		return rate / PIDSCALE;
 	}
-	
+
 	void Update()
 	{
 		encoderCurrent = _enc->Get();
@@ -114,10 +114,10 @@ class Robot2012 : public SimpleRobot
 	Servo* rampServo;
 
 //	Relay* mockRelay;
-	
+
 	// Air
 	Compressor* airCompressor;
-	
+
 	Solenoid* shooterArm;
 	Solenoid* rampArm;
 
@@ -131,19 +131,19 @@ class Robot2012 : public SimpleRobot
 	Encoder* encoderShooterTop;
 	Encoder* encoderShooterBottom;
 	DigitalInput* bBallAngleSensor;
-	
+
 	// Switches
-	
+
 	DigitalInput *bBallElevatorTopLimit;
 	DigitalInput *bBallElevatorBottomLimit;
 	Switch* shooterSwitch;
 	Switch* switchAimTrigger;
-	
+
 	AnalogChannel* tilt;
 
 	// Other
-	ADXL345_I2C *accel;
-	Gyro *gyro;
+//	ADXL345_I2C *accel;
+//	Gyro *gyro;
 
 	// Driver Station //
 
@@ -152,95 +152,98 @@ class Robot2012 : public SimpleRobot
 
 	XboxController *xboxDrive;
 	XboxController *xboxShoot;
-	
+
 	// Systems and Support ///////////////////
 
 	ElevatorSystem* robotElevator;
 	RampArm *robotRampArm;
-	
-	SamplePIDSource* PIDTopShooterSource;
-	SamplePIDOutput* PIDTopShooterOut;
 
+	SamplePIDSource* PIDTopShooterSource;
+//	SamplePIDOutput* PIDTopShooterOut;
+//
 	SamplePIDSource* PIDBottomShooterSource;
-	SamplePIDOutput* PIDBottomShooterOut;
+//	SamplePIDOutput* PIDBottomShooterOut;
 
 	//Shooter *robotShooter;
 
 	bool shooterState;
-	
+
 	double speed1, speed2;
-	double PIDReading;
+//	double PIDReading;
 	UINT8 lightValue;
-	
+
 	int bBallTopWheelSpeed,
-		bBallBottomWheelSpeed,
-		bBallAngle;
+	bBallBottomWheelSpeed,
+	bBallAngle;
 	
+//	float WheelSpeedAtKickTop;
+//	float WheelSpeedAtKickBottom;
+//	float TiltAtKick;
 public:
-    void SetupTurret()
-    {
-        bBallPitchMotor = new Victor(2, 3);
-        bBallRotator = new Victor(2, 4);
-        bBallShooterTop = new Victor(2, 1);
-        bBallShooterBottom = new Victor(2, 2);
-        shooterArm = new Solenoid(1);
-        encoderTurretRotation = new Encoder(2, 3, 2, 4);
-        bBallAngleSensor = new DigitalInput(2, 11);
-        encoderShooterTop = new Encoder(2, 5, 2, 6, true, Encoder::k1X);
-        encoderShooterBottom = new Encoder(2, 7, 2, 8, true, Encoder::k1X);
-        
-        tilt = new AnalogChannel(1);
+	void SetupTurret()
+	{
+		bBallPitchMotor = new Victor(2, 3);
+		bBallRotator = new Victor(2, 4);
+		bBallShooterTop = new Victor(2, 1);
+		bBallShooterBottom = new Victor(2, 2);
+		shooterArm = new Solenoid(1);
+		encoderTurretRotation = new Encoder(2, 3, 2, 4);
+		bBallAngleSensor = new DigitalInput(2, 11);
+		encoderShooterTop = new Encoder(2, 5, 2, 6, true, Encoder::k1X);
+		encoderShooterBottom = new Encoder(2, 7, 2, 8, true, Encoder::k1X);
 
-//        encoderShooterTop->SetDistancePerPulse(100);
-//        encoderShooterBottom->SetDistancePerPulse(1000);
-//        encoderShooterTop->SetPIDSourceParameter(Encoder::kRate);
-//        encoderShooterBottom->SetPIDSourceParameter(Encoder::kRate);
-        encoderTurretRotation->Start();
-        encoderShooterTop->Start();
-        encoderShooterBottom->Start();
+		tilt = new AnalogChannel(1);
 
-        PIDTopShooterSource = new SamplePIDSource(encoderShooterTop);
-        PIDTopShooterOut = new SamplePIDOutput(bBallShooterTop);
-        PIDTopShooterSource->PIDSCALE = 1100.0;
-        
-        PIDBottomShooterSource = new SamplePIDSource(encoderShooterBottom);
-        PIDBottomShooterOut = new SamplePIDOutput(bBallShooterBottom);
+		//        encoderShooterTop->SetDistancePerPulse(100);
+		//        encoderShooterBottom->SetDistancePerPulse(1000);
+		//        encoderShooterTop->SetPIDSourceParameter(Encoder::kRate);
+		//        encoderShooterBottom->SetPIDSourceParameter(Encoder::kRate);
+		encoderTurretRotation->Start();
+		encoderShooterTop->Start();
+		encoderShooterBottom->Start();
 
-        bBallTopWheelSpeed = 0;
-        bBallBottomWheelSpeed = 0;
-        bBallAngle = 0;
+		PIDTopShooterSource = new SamplePIDSource(encoderShooterTop);
+//		PIDTopShooterOut = new SamplePIDOutput(bBallShooterTop);
+		PIDTopShooterSource->PIDSCALE = 1100.0;
 
-//		bBallBrushSensor = new DigitalInput(2,5);
+		PIDBottomShooterSource = new SamplePIDSource(encoderShooterBottom);
+//		PIDBottomShooterOut = new SamplePIDOutput(bBallShooterBottom);
+
+		bBallTopWheelSpeed = 0;
+		bBallBottomWheelSpeed = 0;
+		bBallAngle = 0;
+
+		//		bBallBrushSensor = new DigitalInput(2,5);
 
 		// Systems and Support ///////////////////
-//		robotShooter = new Shooter(bBallShooterTop,
-//									bBallShooterBottom,
-//									bBallRotator,
-//									bBallPitchMotor,
-//									bBallShooterTopEncoder,
-//									bBallShooterBottomEncoder,
-//									encoderTurretRotation,
-//									bBallAngle,
-//									shooterArm);
+		//		robotShooter = new Shooter(bBallShooterTop,
+		//									bBallShooterBottom,
+		//									bBallRotator,
+		//									bBallPitchMotor,
+		//									bBallShooterTopEncoder,
+		//									bBallShooterBottomEncoder,
+		//									encoderTurretRotation,
+		//									bBallAngle,
+		//									shooterArm);
 
 		shooterState = false;
 
-		PIDReading = 0.0;        		
-    }
+//		PIDReading = 0.0;        		
+	}
 
-    void SetupCameras()
-    {
-        //setup cameras
-        AxisCamera::GetInstance();
-        // Outputs //////////////////////////
-        // Vision
-        lightValue = 0;
-        greenLightControl = new PWM(1, 6);
-        greenLightControl->SetPeriodMultiplier(PWM::kPeriodMultiplier_1X);
-        greenLightControl->EnableDeadbandElimination(false);
+	void SetupCameras()
+	{
+		//setup cameras
+		AxisCamera::GetInstance();
+		// Outputs //////////////////////////
+		// Vision
+		lightValue = 0;
+		greenLightControl = new PWM(1, 6);
+		greenLightControl->SetPeriodMultiplier(PWM::kPeriodMultiplier_1X);
+		greenLightControl->EnableDeadbandElimination(false);
 
-        speed1 = 0;
-        speed2 = 0;
+		speed1 = 0;
+		speed2 = 0;
 
 		//Robot Server///////////
 		robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
@@ -251,79 +254,78 @@ public:
 
 			perror ("taskSpawn"); 
 		}
-    }
+	}
 
-    void SetupCollectorElevator()
-    {
-        // collector/elevator
-        bBallElevatorBottom = new Relay(2, 1, Relay::kBothDirections);
-        bBallElevatorTop = new Relay(2, 2, Relay::kBothDirections);
-        bBallCollector = new Victor(2, 5);
-        //		mockRelay = new Relay(2,5,Relay::kBothDirections);
-        //		bBallCollectorSensor = new DigitalInput(2,3);
-        //		bBallElevatorSensor = new DigitalInput(2,4);
-        bBallElevatorTopLimit = new DigitalInput(2, 2);
-        bBallElevatorBottomLimit = new DigitalInput(2, 1);
-        //		robotElevator = new ElevatorSystem(bBallElevatorTop, 
-        //				mockRelay, 
-        //				bBallElevatorBottomLimit, 
-        //				bBallElevatorTopLimit);
-        robotElevator = new ElevatorSystem(bBallElevatorBottom, bBallElevatorTop, bBallElevatorBottomLimit, bBallElevatorTopLimit);
-    }
+	void SetupCollectorElevator()
+	{
+		// collector/elevator
+		bBallElevatorBottom = new Relay(2, 1, Relay::kBothDirections);
+		bBallElevatorTop = new Relay(2, 2, Relay::kBothDirections);
+		bBallCollector = new Victor(2, 5);
+		// mockRelay = new Relay(2,5,Relay::kBothDirections);
+		
+		//		bBallCollectorSensor = new DigitalInput(2,3);
+		//		bBallElevatorSensor = new DigitalInput(2,4);
 
-    void SetupArm()
-    {
-        // ramp
-        rampServo = new Servo(2, 6);
-        rampArm = new Solenoid(2);
-        robotRampArm = new RampArm(rampServo, rampArm);
-    }
+//		robotElevator = new ElevatorSystem(bBallElevatorTop, mockRelay, bBallElevatorBottomLimit, bBallElevatorTopLimit);
+		robotElevator = new ElevatorSystem(bBallElevatorBottom, bBallElevatorTop, bBallElevatorBottomLimit, bBallElevatorTopLimit);
 
-    void SetupRobot()
-    {
-        // On robot //
-        encoderWheelsLeft = new Encoder(1, 1, 1, 2, true);
-        encoderWheelsRight = new Encoder(1, 3, 1, 4, false);
-        encoderWheelsLeft->Start();
-        encoderWheelsRight->Start();
-        // Drive System /////////////////////
-        myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight); // create robot drive base
-        // other
-        // Air
-        airCompressor = new Compressor(1, 10, 2, 3);
-        airCompressor->Start();
+		bBallElevatorTopLimit = new DigitalInput(2, 2);
+		bBallElevatorBottomLimit = new DigitalInput(2, 1);
+	}
+
+	void SetupArm()
+	{
+		// ramp
+		rampServo = new Servo(2, 6);
+		rampArm = new Solenoid(2);
+		robotRampArm = new RampArm(rampServo, rampArm);
+	}
+
+	void SetupRobot()
+	{
+		// On robot //
+		encoderWheelsLeft = new Encoder(1, 1, 1, 2, true);
+		encoderWheelsRight = new Encoder(1, 3, 1, 4, false);
+		encoderWheelsLeft->Start();
+		encoderWheelsRight->Start();
+		// Drive System /////////////////////
+		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight); // create robot drive base
+		// other
+		// Air
+		airCompressor = new Compressor(1, 10, 2, 3);
+		airCompressor->Start();
 
 		// Other
-//		accel = new ADXL345_I2C(1);
-//		gyro = new Gyro(1);
-		
-    }
+		//		accel = new ADXL345_I2C(1);
+		//		gyro = new Gyro(1);
+	}
 
-    void SetupDriverStation()
-    {
-        // Driver Station //
-        driverStationControl = DriverStation::GetInstance();
-        dsLCD = DriverStationLCD::GetInstance();
-        xboxDrive = new XboxController(1);
-        xboxShoot = new XboxController(2);
-    }
+	void SetupDriverStation()
+	{
+		// Driver Station //
+		driverStationControl = DriverStation::GetInstance();
+		dsLCD = DriverStationLCD::GetInstance();
+		xboxDrive = new XboxController(1);
+		xboxShoot = new XboxController(2);
+	}
 
-    /**
+	/**
 	 * Create an instance of a RobotDrive with left and right motors plugged into PWM
 	 */
-    Robot2012(void)
-    {
-        SetupTurret();
-        SetupCameras();
-        SetupCollectorElevator();
-        SetupArm();
-        SetupRobot();
-        SetupDriverStation();		
+	Robot2012(void)
+	{
+		SetupTurret();
+		SetupCameras();
+		SetupCollectorElevator();
+		SetupArm();
+		SetupRobot();
+		SetupDriverStation();		
 	}
 
 	void processVisionBridge(char * msg) {
 		char * workingMessage = strtok(msg,",");
-		
+
 		do {
 			double value = atof(&workingMessage[1]);
 			switch(workingMessage[0]) {
@@ -333,29 +335,24 @@ public:
 			}
 		} while (workingMessage = strtok(0, ","));
 	}
-	
+
 	/**
 	 * Drive left & right motors for 2 seconds, enabled by a jumper (jumper
 	 * must be in for autonomous to operate).
 	 */
 	void Autonomous(void)
 	{
+		myRobot->speedMatchLeftCounterStart = 0;
+		myRobot->speedMatchRightCounterStart = 0;
 		while(IsAutonomous() && IsEnabled())
 		{
-			if(((myRobot->rightCount + myRobot->leftCount) / 2) < 700)
+			if(((myRobot->rightCount + myRobot->leftCount) / 2) < 4000)
 			{
-				if(myRobot->leftCount - myRobot->rightCount > 10)
-				{
-					myRobot->Periodic(0.2, 0.5);
-				}
-				else if(myRobot->rightCount - myRobot->leftCount > 10)
-				{
-					myRobot->Periodic(0.5, 0.2);
-				}
-				else
-				{
-					myRobot->Periodic(0.5, 0.5);
-				}
+				myRobot->Periodic((driverStationControl->GetAnalogIn(4)/5), (driverStationControl->GetAnalogIn(4)/5), true);
+			}
+			else 
+			{
+				myRobot->Periodic(0.0, 0.0, true);
 			}
 			Debug();
 			Wait(.005);
@@ -367,57 +364,35 @@ public:
 		// any setup?
 		char msgBuf[1024];
 		int loopCount = 0;
-		int startTimeAngle = 0;
-		
+
 		Switch rampArmSwitch;
 		Switch rampServoSwitch;
 
 		rampArm->Set(false);
 		robotElevator->ManualFreezeAll();
-		
-		PIDController speedcontroller( 0.1, // P
-				0.00, // I
-				0.5, // D
-				PIDTopShooterSource, // source
-				PIDTopShooterOut, // output
-				0.005); // period
-		speedcontroller.SetInputRange(-1, 1);
-		speedcontroller.SetOutputRange(-1, 1);
-		speedcontroller.SetTolerance(1.0 / 90.0 * 100);
-		speedcontroller.SetContinuous(false);
-		speedcontroller.Enable();
-		
+
+//		PIDController speedcontroller( 0.1, // P
+//				0.00, // I
+//				0.5, // D
+//				PIDTopShooterSource, // source
+//				PIDTopShooterOut, // output
+//				0.005); // period
+//		speedcontroller.SetInputRange(-1, 1);
+//		speedcontroller.SetOutputRange(-1, 1);
+//		speedcontroller.SetTolerance(.05);
+//		speedcontroller.SetContinuous(false);
+//		speedcontroller.Enable();
+
 
 		while (IsOperatorControl())
 		{
 			PIDTopShooterSource->Update();
 			PIDBottomShooterSource->Update();
-			PIDReading = speedcontroller.GetError();
+			//			PIDReading = speedcontroller.GetError();
 			// get sensor feedback /////////////////////
 
-//turret			
-			//set tilt
-			if (bBallAngleSensor->Get() == 1)
-			{
-				// these for loops are to prevent a while lock.  if it loops 5000 times it ejects
-				for (int i = 0; i < 500; i++)
-				{
-					if (bBallAngleSensor->Get() == 0)
-					{
-						break;
-					}
-				}
-								startTimeAngle = GetFPGATime();
-				for (int i = 0; i < 500; i++)
-				{
-					if (bBallAngleSensor->Get() == 1)
-					{
-						break;
-					}
-				}
-				bBallAngle = GetFPGATime() - startTimeAngle;					
-			}
-			
+//			//turret			
+
 			// Aim ////////////////////////////////
 			bBallRotator->Set(-xboxShoot->GetRightX()/2);
 			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
@@ -427,28 +402,30 @@ public:
 			{
 				shooterState = true;
 			}
-			
+
 			if(xboxShoot->GetLB() || xboxShoot->GetLeftTrigger() > .1)
 			{
 				shooterState = false;
 			}
-			
+
 			if (shooterState)
 			{
-				speedcontroller.SetSetpoint(0.8);
-//				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
+//				speedcontroller.SetSetpoint(0.8);
+				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
 				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2)*-1);
 			}
 			else
 			{
-				speedcontroller.SetSetpoint(0.0);
-//				bBallShooterTop->Set(0.0);
+//				speedcontroller.SetSetpoint(0.0);
+				bBallShooterTop->Set(0.0);
 				bBallShooterBottom->Set(0.0);
 			}
 
-			
 			shooterArm->Set(xboxShoot->GetA());
-//			
+			if (xboxShoot->GetA())
+			{
+			}
+			//
 
 			//greenLightControl->SetRaw(10);
 
@@ -471,9 +448,9 @@ public:
 			{
 				bBallCollector->Set(0.0);
 			}
-			
+
 			// ELEVATORS //////////////////////////////
-			
+
 			// elevator system
 			robotRampArm->PeriodicSystem(xboxDrive->GetLeftStickClick());
 
@@ -495,7 +472,7 @@ public:
 			{
 				bBallElevatorBottom->Set(Relay::kOff);
 			}
-			
+
 			// top down			
 			if (xboxShoot->GetX())
 			{
@@ -512,61 +489,44 @@ public:
 			{
 				bBallElevatorTop->Set(Relay::kOff);
 			}
-			
-			robotElevator->PeriodicSystem(xboxShoot->GetY());
-			
 
-			
+			robotElevator->PeriodicSystem(xboxShoot->GetY());
+
+
+
 			//Reset DeadReckoner
 			if(xboxDrive->GetSelect())
 			{
 				myRobot->ResetPosition();
 			}
-			
-			
-			
-			// ramp arm kick off
-//			rampArm->Set(rampArmSwitch.State(xboxDrive->GetLeftStickClick()));
-			
-			// ramp arm servo test
-			
-//			if (xboxDrive->GetRightStickClick())
-//			{
-//				rampServo->SetAngle(102.0);
-//			}
-//			else
-//			{
-//				rampServo->SetAngle(0.0);
-//			}
-			
-			
+
 			//Robot Server///////////
 			//printf("%d\n", val);
 			memset(msgBuf, 0, sizeof(char) * 1024);
 			if (msgQReceive(robotQueue, msgBuf, 1024, NO_WAIT) != ERROR) {
-//				printf("Got a message: %s\n", msgBuf);
-				
+				//				printf("Got a message: %s\n", msgBuf);
+
 				processVisionBridge(msgBuf);
 				//speed = atoi(msgBuf);
 				//speed /= 1000;
 				//printf("speed: %f", speed);
 			}
-			
-//			bBallRotator->Set(speed1);
+
+			//			bBallRotator->Set(speed1);
 			//bBallShooterBottom->Set(speed2);
 			greenLightControl->SetRaw(lightValue);
-			
-			
+
+
 			// random output stuff!! ////////////
-			
-			
-			
+
+
+
 			if(loopCount % 50 == 0)
 			{
-				
+
 				Debug();
 			}
-			
+
 			loopCount++;
 			Wait(0.005);
 		}
@@ -577,59 +537,62 @@ public:
 		//180/pi = 57.296
 		return rads*57.296;
 	}
-	
+
 	void CalculateIdealAngleAndSpeed(double distance, double height, double* computedAngle, double* computedSpeed)
 	{
 		*computedAngle = 0.0;
 		*computedSpeed = 0.0;
-		
+
 		// =45+((DEGREES(ATAN(height/distance)))/2)
 		*computedAngle = 45.0+((degrees(atan(height/distance)))/2.0);
 
-//		printf("a: %f/n",*computedAngle);
+		//		printf("a: %f/n",*computedAngle);
 		//32.2 ft/s/s
 		// =SQRT(32.2*(height+(SQRT(height^2+distance^2))))
 		*computedSpeed = sqrt(32.2*(height+(sqrt(pow(height,2.0)+pow(distance,2.0)))));
-//		printf("S: %f/n",*computedSpeed);
+		//		printf("S: %f/n",*computedSpeed);
 	}
-	
+
 	void Debug()
 	{
-//		printf("l:%f", myRobot->leftMotorSetting);
-//		printf("r:%f", myRobot->rightMotorSetting);
+		//		printf("l:%f", myRobot->leftMotorSetting);
+		//		printf("r:%f", myRobot->rightMotorSetting);
 
-//		printf("x:%f", myRobot->PositionX());
-//		printf(" y:%f", myRobot->PositionY());		
-//		printf(" h:%f", myRobot->Heading());
-		
+		//		printf("x:%f", myRobot->PositionX());
+		//		printf(" y:%f", myRobot->PositionY());		
+		//		printf(" h:%f", myRobot->Heading());
+
 		//printf("X position: %f  ", myRobot->PositionX() );
 		//printf("Y position: %f  ", myRobot->PositionY() );
 		//printf("Heading: %f", myRobot->Heading() );
 		dsLCD->Clear();
-//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " lWheel: %i", myRobot->leftCount);
-//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " rWheel: %i", myRobot->rightCount);
+		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " lWheel: %i", myRobot->leftCount);
+		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " rWheel: %i", myRobot->rightCount);
 
-//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %d", bBallTopWheelSpeed);
-//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %d", bBallBottomWheelSpeed);
+		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %d", bBallTopWheelSpeed);
+		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %d", bBallBottomWheelSpeed);
 
-//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", bBallAngle);
+		//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", bBallAngle);
 
 		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %f", PIDTopShooterSource->PIDGet());
 		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %f", PIDBottomShooterSource->PIDGet());
-//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " left: %f", myRobot->scaledLeft);
-//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " right: %f", myRobot->scaledRight);
-		
+		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " left: %f", myRobot->scaledLeft);
+		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " right: %f", myRobot->scaledRight);
+
 		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " lWheel: %i", myRobot->leftCount);
-		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " rWheel: %i", myRobot->rightCount);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " lWheel: %i", myRobot->leftCount);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " rWheel: %i", myRobot->rightCount);
 
-//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", myRobot->Heading());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", (myRobot->Heading() / (2.0 * 3.1415927)));
 //		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " X:%f", myRobot->PositionX());
 //		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " Y:%f", myRobot->PositionY());
-		
-		
+
+//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Tilt:%f", TiltAtKick);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " top:%f", WheelSpeedAtKickTop);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " bottom:%f", WheelSpeedAtKickBottom);
+
 
 		dsLCD->UpdateLCD();
 	}

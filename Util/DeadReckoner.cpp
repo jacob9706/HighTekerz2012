@@ -4,8 +4,8 @@
 
 const static double ticksPerRevolution = 540.0;
 const static double pi = 3.14159;
-const static double wheelWidth = 30.875;
-const static double wheelRadius = 4.0;
+const static double wheelWidth = 31.5;
+const static double wheelRadius = 3.892;
 
 DeadReckoner::DeadReckoner(Encoder *leftEncoder2, Encoder *rightEncoder2)
 {
