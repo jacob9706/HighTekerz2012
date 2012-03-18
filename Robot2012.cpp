@@ -266,13 +266,17 @@ public:
 		bBallElevatorTopLimit = new DigitalInput(2, 2);
 		bBallElevatorBottomLimit = new DigitalInput(2, 1);
 
-		// mockRelay = new Relay(2,5,Relay::kBothDirections);
+//		 mockRelay = new Relay(2,5,Relay::kBothDirections);
 		
 		//		bBallCollectorSensor = new DigitalInput(2,3);
 		//		bBallElevatorSensor = new DigitalInput(2,4);
 
 //		robotElevator = new ElevatorSystem(bBallElevatorTop, mockRelay, bBallElevatorBottomLimit, bBallElevatorTopLimit);
-		robotElevator = new ElevatorSystem(bBallElevatorBottom, bBallElevatorTop, bBallElevatorBottomLimit, bBallElevatorTopLimit);
+		robotElevator = new ElevatorSystem(bBallElevatorBottom,
+										   bBallElevatorTop,
+										   bBallElevatorBottomLimit,
+										   bBallElevatorTopLimit
+										  );
 
 	}
 
@@ -576,7 +580,13 @@ public:
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " right: %f", myRobot->scaledRight);
 
 //		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
+
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " isRunnng: %d", robotElevator->IsRunning);
+		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " bottom: %d", bBallElevatorBottomLimit->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " top: %d", bBallElevatorTopLimit->Get());
+		
+//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " topSwitch: %s", bBallElevatorTopLimit->Get());
 
 //		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " lWheel: %i", myRobot->leftCount);
 //		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " rWheel: %i", myRobot->rightCount);

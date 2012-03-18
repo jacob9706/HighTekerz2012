@@ -23,7 +23,7 @@ ElevatorSystem::ElevatorSystem(Relay* lowerElevatorMotor,
 
 ElevatorSystem::~ElevatorSystem()
 {
-	
+
 }
 
 void ElevatorSystem::PeriodicSystem(bool startElevator)
