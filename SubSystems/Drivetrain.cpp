@@ -79,16 +79,6 @@ void Drivetrain::Periodic(float moveLeftInput, float moveRightInput, bool enable
 	//abs of inputs are within allowable tolerence and same sign
 	if (fabs(moveLeftInput - moveRightInput) <= allowableInputDifference && leftInputSign == rightInputSign)
 	{
-		// if we were not in speed match, then start the counters
-		if (!speedMatch)
-		{
-			speedMatchLeftCounterStart = leftCount;
-			speedMatchRightCounterStart = rightCount;
-		}
-
-		// set speed match for encounter scaling later
-		speedMatch = true;
-
 		// get difference in favor of left
 		float leftDiff = moveLeftInput - moveRightInput;
 		float leftDiffSign = Sign(leftDiff);
@@ -104,10 +94,6 @@ void Drivetrain::Periodic(float moveLeftInput, float moveRightInput, bool enable
 			moveLeftInput -= leftDiff;
 		}
 	}
-	else
-	{
-		speedMatch = false;
-	}
 
 	float newLeftSpeed = NewSpeed(leftMotorSetting, moveLeftInput);
 	float newRightSpeed = NewSpeed(rightMotorSetting, moveRightInput);
@@ -118,8 +104,8 @@ void Drivetrain::Periodic(float moveLeftInput, float moveRightInput, bool enable
 	scaledLeft = newLeftSpeed;
 	scaledRight = newRightSpeed;
 
-	if (speedMatch && (leftInputSign == rightInputSign) && enableMatchEncoders)
-	{ 
+	if ((leftInputSign == rightInputSign) && enableMatchEncoders)
+	{
 		int deltaLeft = leftCount - speedMatchLeftCounterStart;
 		int deltaRight =  rightCount - speedMatchRightCounterStart;
 

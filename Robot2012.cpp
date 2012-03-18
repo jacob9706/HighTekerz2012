@@ -13,7 +13,7 @@ const static float TURRET_ROTATION_TICKS = 720;
 //#include "SubSystems/Shooter.h"
 
 //Robot Server///////////
-STATUS tcpServer (void) ;
+STATUS tcpServer (void);
 MSG_Q_ID robotQueue;
 MSG_Q_ID getRobotMsgQueue()
 {
@@ -246,7 +246,7 @@ public:
 		speed2 = 0;
 
 		//Robot Server///////////
-		robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);		
+		robotQueue = msgQCreate(100, 1024, MSG_Q_PRIORITY);
 		if (taskSpawn("tcpServer", 100, 0, 10000, 
 				(FUNCPTR) tcpServer, 0,0,0,0,0,0,0,0,0,0) == ERROR) 
 		{
@@ -422,10 +422,6 @@ public:
 			}
 
 			shooterArm->Set(xboxShoot->GetA());
-			if (xboxShoot->GetA())
-			{
-			}
-			//
 
 			//greenLightControl->SetRaw(10);
 
@@ -451,7 +447,7 @@ public:
 
 			// ELEVATORS //////////////////////////////
 
-			// elevator system
+			// ramp arm
 			robotRampArm->PeriodicSystem(xboxDrive->GetLeftStickClick());
 
 
@@ -491,8 +487,6 @@ public:
 			}
 
 			robotElevator->PeriodicSystem(xboxShoot->GetY());
-
-
 
 			//Reset DeadReckoner
 			if(xboxDrive->GetSelect())
@@ -579,8 +573,8 @@ public:
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " left: %f", myRobot->scaledLeft);
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " right: %f", myRobot->scaledRight);
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
-//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
 
 //		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " lWheel: %i", myRobot->leftCount);
 //		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " rWheel: %i", myRobot->rightCount);
