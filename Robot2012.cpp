@@ -262,6 +262,10 @@ public:
 		bBallElevatorBottom = new Relay(2, 1, Relay::kBothDirections);
 		bBallElevatorTop = new Relay(2, 2, Relay::kBothDirections);
 		bBallCollector = new Victor(2, 5);
+		
+		bBallElevatorTopLimit = new DigitalInput(2, 2);
+		bBallElevatorBottomLimit = new DigitalInput(2, 1);
+
 		// mockRelay = new Relay(2,5,Relay::kBothDirections);
 		
 		//		bBallCollectorSensor = new DigitalInput(2,3);
@@ -270,8 +274,6 @@ public:
 //		robotElevator = new ElevatorSystem(bBallElevatorTop, mockRelay, bBallElevatorBottomLimit, bBallElevatorTopLimit);
 		robotElevator = new ElevatorSystem(bBallElevatorBottom, bBallElevatorTop, bBallElevatorBottomLimit, bBallElevatorTopLimit);
 
-		bBallElevatorTopLimit = new DigitalInput(2, 2);
-		bBallElevatorBottomLimit = new DigitalInput(2, 1);
 	}
 
 	void SetupArm()
