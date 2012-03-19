@@ -184,13 +184,13 @@ public:
 	{
 		bBallPitchMotor = new Victor(2, 3);
 		bBallRotator = new Victor(2, 4);
-		bBallShooterTop = new Victor(2, 1);
-		bBallShooterBottom = new Victor(2, 2);
+		bBallShooterTop = new Victor(2, 2);
+		bBallShooterBottom = new Victor(2, 1);
 		shooterArm = new Solenoid(1);
 		encoderTurretRotation = new Encoder(2, 3, 2, 4);
 		bBallAngleSensor = new DigitalInput(2, 11);
-		encoderShooterTop = new Encoder(2, 5, 2, 6, true, Encoder::k1X);
-		encoderShooterBottom = new Encoder(2, 7, 2, 8, true, Encoder::k1X);
+		encoderShooterTop = new Encoder(2, 5, 2, 6, false, Encoder::k1X);
+		encoderShooterBottom = new Encoder(2, 7, 2, 8, false, Encoder::k1X);
 
 		tilt = new AnalogChannel(1);
 
@@ -204,7 +204,7 @@ public:
 
 		PIDTopShooterSource = new SamplePIDSource(encoderShooterTop);
 //		PIDTopShooterOut = new SamplePIDOutput(bBallShooterTop);
-		PIDTopShooterSource->PIDSCALE = 1100.0;
+//		PIDTopShooterSource->PIDSCALE = 1100.0;
 
 		PIDBottomShooterSource = new SamplePIDSource(encoderShooterBottom);
 //		PIDBottomShooterOut = new SamplePIDOutput(bBallShooterBottom);
@@ -417,8 +417,8 @@ public:
 			if (shooterState)
 			{
 //				speedcontroller.SetSetpoint(0.8);
-				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
-				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2)*-1);
+				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1));
+				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2));
 			}
 			else
 			{
