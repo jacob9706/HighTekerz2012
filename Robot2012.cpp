@@ -1,3 +1,5 @@
+#include "LowLevel/Encoder3574.h"
+//#include "LowLevel/PIDController3574.h"
 #include "WPILib.h"
 #include "math.h"
 #include "SubSystems/ElevatorSystem.h"
@@ -40,7 +42,7 @@ class SamplePIDSource : public PIDSource
 {
 public:
 	double PIDSCALE;
-	SamplePIDSource(Encoder* enc) 
+	SamplePIDSource(Encoder3574* enc) 
 	{
 		//"K" is a tuning constant, which you use to adjust the "strength" of the filter. K must be in the range zero to +1. When K=0, there is no filtering. When K=1, the filtering is so "strong" that the filtered value never changes.
 		TUNING_CONSTANT = .8;
@@ -81,7 +83,7 @@ public:
 	double TUNING_CONSTANT;	
 	double SCALE;
 private:
-	Encoder* _enc;
+	Encoder3574* _enc;
 
 	int encoderCurrent ;
 	int encoderLast;
@@ -125,11 +127,11 @@ class Robot2012 : public SimpleRobot
 	// On robot //
 	// Encoders
 
-	Encoder* encoderWheelsLeft;
-	Encoder* encoderWheelsRight;
-	Encoder* encoderTurretRotation;
-	Encoder* encoderShooterTop;
-	Encoder* encoderShooterBottom;
+	Encoder3574* encoderWheelsLeft;
+	Encoder3574* encoderWheelsRight;
+	Encoder3574* encoderTurretRotation;
+	Encoder3574* encoderShooterTop;
+	Encoder3574* encoderShooterBottom;
 	DigitalInput* bBallAngleSensor;
 
 	// Switches
@@ -158,10 +160,10 @@ class Robot2012 : public SimpleRobot
 	ElevatorSystem* robotElevator;
 	RampArm *robotRampArm;
 
-	SamplePIDSource* PIDTopShooterSource;
+//	SamplePIDSource* PIDTopShooterSource;
 //	SamplePIDOutput* PIDTopShooterOut;
-//
-	SamplePIDSource* PIDBottomShooterSource;
+
+//	SamplePIDSource* PIDBottomShooterSource;
 //	SamplePIDOutput* PIDBottomShooterOut;
 
 	//Shooter *robotShooter;
@@ -184,13 +186,13 @@ public:
 	{
 		bBallPitchMotor = new Victor(2, 3);
 		bBallRotator = new Victor(2, 4);
-		bBallShooterTop = new Victor(2, 1);
-		bBallShooterBottom = new Victor(2, 2);
+		bBallShooterTop = new Victor(2, 2);
+		bBallShooterBottom = new Victor(2, 1);
 		shooterArm = new Solenoid(1);
-		encoderTurretRotation = new Encoder(2, 3, 2, 4);
+		encoderTurretRotation = new Encoder3574(2, 3, 2, 4);
 		bBallAngleSensor = new DigitalInput(2, 11);
-		encoderShooterTop = new Encoder(2, 5, 2, 6, true, Encoder::k1X);
-		encoderShooterBottom = new Encoder(2, 7, 2, 8, true, Encoder::k1X);
+		encoderShooterTop = new Encoder3574(2, 5, 2, 6, false, Encoder3574::k1X);
+		encoderShooterBottom = new Encoder3574(2, 7, 2, 8, false, Encoder3574::k1X);
 
 		tilt = new AnalogChannel(1);
 
@@ -202,11 +204,11 @@ public:
 		encoderShooterTop->Start();
 		encoderShooterBottom->Start();
 
-		PIDTopShooterSource = new SamplePIDSource(encoderShooterTop);
+//		PIDTopShooterSource = new SamplePIDSource(encoderShooterTop);
 //		PIDTopShooterOut = new SamplePIDOutput(bBallShooterTop);
-		PIDTopShooterSource->PIDSCALE = 1100.0;
+//		PIDTopShooterSource->PIDSCALE = 1100.0;
 
-		PIDBottomShooterSource = new SamplePIDSource(encoderShooterBottom);
+//		PIDBottomShooterSource = new SamplePIDSource(encoderShooterBottom);
 //		PIDBottomShooterOut = new SamplePIDOutput(bBallShooterBottom);
 
 		bBallTopWheelSpeed = 0;
@@ -227,8 +229,6 @@ public:
 		//									shooterArm);
 
 		shooterState = false;
-
-//		PIDReading = 0.0;        		
 	}
 
 	void SetupCameras()
@@ -291,8 +291,8 @@ public:
 	void SetupRobot()
 	{
 		// On robot //
-		encoderWheelsLeft = new Encoder(1, 1, 1, 2, true);
-		encoderWheelsRight = new Encoder(1, 3, 1, 4, false);
+		encoderWheelsLeft = new Encoder3574(1, 1, 1, 2, true);
+		encoderWheelsRight = new Encoder3574(1, 3, 1, 4, false);
 		encoderWheelsLeft->Start();
 		encoderWheelsRight->Start();
 		// Drive System /////////////////////
@@ -377,23 +377,19 @@ public:
 		rampArm->Set(false);
 		robotElevator->ManualFreezeAll();
 
+// TODO: use pid controller
 //		PIDController speedcontroller( 0.1, // P
 //				0.00, // I
 //				0.5, // D
 //				PIDTopShooterSource, // source
 //				PIDTopShooterOut, // output
 //				0.005); // period
-//		speedcontroller.SetInputRange(-1, 1);
-//		speedcontroller.SetOutputRange(-1, 1);
-//		speedcontroller.SetTolerance(.05);
-//		speedcontroller.SetContinuous(false);
 //		speedcontroller.Enable();
-
 
 		while (IsOperatorControl())
 		{
-			PIDTopShooterSource->Update();
-			PIDBottomShooterSource->Update();
+//			PIDTopShooterSource->Update();
+//			PIDBottomShooterSource->Update();
 			//			PIDReading = speedcontroller.GetError();
 			// get sensor feedback /////////////////////
 
@@ -417,8 +413,8 @@ public:
 			if (shooterState)
 			{
 //				speedcontroller.SetSetpoint(0.8);
-				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1)*-1);
-				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2)*-1);
+				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1));
+				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2));
 			}
 			else
 			{
@@ -435,7 +431,6 @@ public:
 			float speedAdjust = (driverStationControl->GetAnalogIn(4)/5);
 			myRobot->Periodic(-xboxDrive->GetLeftY() * speedAdjust,
 					-xboxDrive->GetRightY() * speedAdjust);	 // drive with tank style
-
 
 			// collector ///////////////////////////////
 			if (xboxDrive->GetLB() || xboxDrive->GetLeftTrigger() > .1)
@@ -518,15 +513,17 @@ public:
 			//bBallShooterBottom->Set(speed2);
 			greenLightControl->SetRaw(lightValue);
 
-
 			// random output stuff!! ////////////
-
-
-
 			if(loopCount % 50 == 0)
 			{
 
 				Debug();
+			}
+			
+			// this is the override to stop the motors.
+			if(xboxDrive->GetA())
+			{
+				myRobot->TankDrive(0.0,0.0);
 			}
 
 			loopCount++;
@@ -576,17 +573,19 @@ public:
 
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " Angle:%f", bBallAngle);
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %f", PIDTopShooterSource->PIDGet());
-		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %f", PIDBottomShooterSource->PIDGet());
+		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %f", encoderShooterTop->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %f", encoderShooterBottom->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tWheel: %f", encoderShooterTop->m_counter->GetPeriod()*1000);
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " bWheel: %f", encoderShooterBottom->m_counter->GetPeriod()*1000);
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " left: %f", myRobot->scaledLeft);
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " right: %f", myRobot->scaledRight);
 
 //		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
-//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tilt: %f", tilt->GetVoltage());
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " tilt: %f", tilt->GetVoltage());
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " isRunnng: %d", robotElevator->IsRunning);
-		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " bottom: %d", bBallElevatorBottomLimit->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " top: %d", bBallElevatorTopLimit->Get());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " isRunnng: %d", robotElevator->IsRunning);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " bottom: %d", bBallElevatorBottomLimit->Get());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " top: %d", bBallElevatorTopLimit->Get());
 		
 //		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " topSwitch: %s", bBallElevatorTopLimit->Get());
 

@@ -37,7 +37,7 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 	}
 
 	// timer for the upper motor (terrible dependancy on loop length of teleop
-	if (timeStart < 900)
+	if (timeStart < 500)
 	{
 		// start top el
 		_upperElevatorMotor->Set(Relay::kOn);

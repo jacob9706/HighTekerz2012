@@ -67,7 +67,7 @@ float XboxController::GetTriggerAxis()
 	float trigger = pow(xbox->GetRawAxis(3), joystickCurve);
 		
 		//adds a little bit of tolerance of .1 for trigger
-		if( 1 >= abs(trigger) <= -.1)
+		if(1.0 >= fabs(trigger) <= -.1)
 		{
 			return trigger;
 		}
