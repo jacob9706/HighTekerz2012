@@ -1,9 +1,9 @@
 #ifndef __PIDENCODER_H
 #define __PIDENCODER_H
 
-class Encoder;
+class Encoder3574;
 
-class PIDEncoder : Encoder
+class PIDEncoder : Encoder3574
 {
 public:
 	PIDEncoder(UINT );

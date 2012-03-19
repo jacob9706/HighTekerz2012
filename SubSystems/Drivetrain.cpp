@@ -6,7 +6,7 @@ const static float allowableInputDifference = .25;
 const static float maxDriveChange = .015;
 const static float ENCODER_FOLLOW_SCALE = .02;
 
-Drivetrain::Drivetrain(UINT32 left1, UINT32 left2, UINT32 right1, UINT32 right2, Encoder* leftEncoder, Encoder* rightEncoder) 
+Drivetrain::Drivetrain(UINT32 left1, UINT32 left2, UINT32 right1, UINT32 right2, Encoder3574* leftEncoder, Encoder3574* rightEncoder) 
 : RobotDrive(left1, left2, right1, right2), DeadReckoner(leftEncoder, rightEncoder)
 {
 	rightMotorSetting = 0.0;
@@ -42,11 +42,11 @@ float NewSpeed(float oldSpeed,float newRequestedSpeed)
 //Returns 1 if positive, -1 if negative, 0 if zero
 float Sign(float number)
 {
-	if(number >0)
+	if(number > 0)
 	{
 		return 1.0;
 	}
-	else if(number<0)
+	else if(number < 0)
 	{
 		return -1.0;
 	}
@@ -56,16 +56,33 @@ float Sign(float number)
 	}
 }
 
+float split1 = .1;
+float val1 = .4;
+float split2 = .96;
+float val2 = .60;
+
+float ratio0 = val1/split1;
+float ratio1 = (val2 - val1)/(split2 - split1);
+float ratio1Add = val1-(ratio1*split1);
+float ratio2 = (1-val2)/(1-split2);
+float ratio2Add = val2-(ratio2*split2);
+
+
 float ScaleDriving(float inSpeed)
 {
+			
 	float calculatedSpeed;
-	if (fabs(inSpeed)<0.1)
+	if (fabs(inSpeed) < split1)
 	{
-		calculatedSpeed = inSpeed*4;
+		calculatedSpeed = inSpeed*ratio0;
+	}
+	else if (fabs(inSpeed) < split2)
+	{
+		calculatedSpeed = inSpeed * ratio1 + Sign(inSpeed) * ratio1Add;
 	}
 	else
 	{
-		(Sign(inSpeed)*(inSpeed*inSpeed*60/99))+(inSpeed*39/99);
+		calculatedSpeed = inSpeed * ratio2 + Sign(inSpeed) * ratio2Add;
 	}
 
 	return calculatedSpeed;
@@ -98,11 +115,9 @@ void Drivetrain::Periodic(float moveLeftInput, float moveRightInput, bool enable
 	float newLeftSpeed = NewSpeed(leftMotorSetting, moveLeftInput);
 	float newRightSpeed = NewSpeed(rightMotorSetting, moveRightInput);
 
-	//	scaledLeft = ScaleDriving(newLeftSpeed);
-	//	scaledRight = ScaleDriving(newRightSpeed);
+	scaledLeft = ScaleDriving(newLeftSpeed);
+	scaledRight = ScaleDriving(newRightSpeed);
 
-	scaledLeft = newLeftSpeed;
-	scaledRight = newRightSpeed;
 
 	if ((leftInputSign == rightInputSign) && enableMatchEncoders)
 	{
