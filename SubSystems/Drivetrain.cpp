@@ -6,7 +6,7 @@ const static float allowableInputDifference = .25;
 const static float maxDriveChange = .015;
 const static float ENCODER_FOLLOW_SCALE = .02;
 
-Drivetrain::Drivetrain(UINT32 left1, UINT32 left2, UINT32 right1, UINT32 right2, Encoder3574* leftEncoder, Encoder3574* rightEncoder) 
+Drivetrain::Drivetrain(UINT32 left1, UINT32 left2, UINT32 right1, UINT32 right2, Encoder* leftEncoder, Encoder* rightEncoder) 
 : RobotDrive(left1, left2, right1, right2), DeadReckoner(leftEncoder, rightEncoder)
 {
 	rightMotorSetting = 0.0;

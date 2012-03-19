@@ -1,17 +1,17 @@
 #include <cmath>
 #include "WPILib.h"
-#include "../LowLevel/Encoder3574.h"
+#include "Encoder.h"
 
 class RobotDeadReckoner
 {
 public:
-	RobotDeadReckoner(Encoder3574 *e1, Encoder3574 *e2);
+	RobotDeadReckoner(Encoder *e1, Encoder *e2);
 	float getX();
 	float getY();
 	float getHeading();
 private:
-	Encoder3574 *encoder1;//Encoder1 (Left Transmision while looking from the back)
-	Encoder3574 *encoder2;//Encoder2 (Right Transmision while looking from the back)
+	Encoder *encoder1;//Encoder1 (Left Transmision while looking from the back)
+	Encoder *encoder2;//Encoder2 (Right Transmision while looking from the back)
 	int wheelRadius;//Wheel Radius (Center Wheel)
 	float axleWidthCenterToCenter;
 	int encoderTicksPerRotation;
@@ -23,7 +23,7 @@ private:
 	float pi;
 };
 
-RobotDeadReckoner::RobotDeadReckoner(Encoder3574 *e1, Encoder3574 *e2)
+RobotDeadReckoner::RobotDeadReckoner(Encoder *e1, Encoder *e2)
 {
 	encoder1 = e1;
 	encoder2 = e2;

@@ -15,7 +15,7 @@ ElevatorSystem::ElevatorSystem(Relay* lowerElevatorMotor,
 	IsRunning = false;	
 	elevatorUp = false;
 	elevatorDown = false;
-	timeStart = 601.0;
+	timeStart = 1001.0;
 	
 	limitReachedLowerBottom = !_lowerLimitSwitchOpen->Get();
 	limitReachedLowerTop = !_upperLimitSwitchOpen->Get();
@@ -37,7 +37,7 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 	}
 
 	// timer for the upper motor (terrible dependancy on loop length of teleop
-	if (timeStart < 500)
+	if (timeStart < 1000)
 	{
 		// start top el
 		_upperElevatorMotor->Set(Relay::kOn);
@@ -99,5 +99,5 @@ void ElevatorSystem::ManualFreezeAll()
 	IsRunning = false;	
 	elevatorUp = false;
 	elevatorDown = false;
-	timeStart = 601.0;
+	timeStart = 1001.0;
 }

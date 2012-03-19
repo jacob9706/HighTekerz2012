@@ -2,7 +2,7 @@
 #define __SHOOTER_H
 
 class Victor;
-class Encoder3574;
+class Encoder;
 class Solenoid;
 
 class Shooter
@@ -12,10 +12,10 @@ public:
 			Victor *bottomWheel,
 			Victor *rotationMotor,
 			Victor *pitchMotor,
-			Encoder3574 *topWheelEncoder,
-			Encoder3574 *bottomWheelEncoder,
-			Encoder3574 *rotationEncoder,
-			Encoder3574 *pitchEncoder,
+			Encoder *topWheelEncoder,
+			Encoder *bottomWheelEncoder,
+			Encoder *rotationEncoder,
+			Encoder *pitchEncoder,
 			Solenoid *kicker);
 	~Shooter();
 	void Periodic(bool shoot);
@@ -29,10 +29,10 @@ private:
 	Victor *_bottomWheel;
 	Victor *_rotationMotor;
 	Victor *_pitchMotor;
-	Encoder3574 *_topWheelEncoder;
-	Encoder3574 *_bottomWheelEncoder;
-	Encoder3574 *_rotationEncoder;
-	Encoder3574 *_pitchEncoder;
+	Encoder *_topWheelEncoder;
+	Encoder *_bottomWheelEncoder;
+	Encoder *_rotationEncoder;
+	Encoder *_pitchEncoder;
 	Solenoid *_kicker;
 };
 

@@ -1,12 +1,12 @@
 #ifndef __DEAD_RECKONER_H
 #define __DEAD_RECKONER_H
 
-class Encoder3574;
+class Encoder;
 
 class DeadReckoner
 {
 public:
-	DeadReckoner(Encoder3574 *leftEncoder, Encoder3574 *rightEncoder);
+	DeadReckoner(Encoder *leftEncoder, Encoder *rightEncoder);
 	~DeadReckoner();
 	void ResetPosition();
 	void Update();
@@ -17,8 +17,8 @@ public:
 	float Velocity();
 	int leftCount;
 	int rightCount;
-	Encoder3574 *leftEncoder;
-	Encoder3574 *rightEncoder;
+	Encoder *leftEncoder;
+	Encoder *rightEncoder;
 private:
 	float heading;
 	float x;

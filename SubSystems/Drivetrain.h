@@ -8,8 +8,8 @@ class Drivetrain : public RobotDrive, public DeadReckoner
 {
 public:
 	Drivetrain(UINT32 left1, UINT32 left2, UINT32 right1, UINT32 right2, 
-			Encoder3574* leftEncoder, 
-			Encoder3574* rightEncoder
+			Encoder* leftEncoder, 
+			Encoder* rightEncoder
 			);
 	~Drivetrain();
 	void Periodic(float moveLeft, float moveRight, bool enableMatchEncoders = false);
