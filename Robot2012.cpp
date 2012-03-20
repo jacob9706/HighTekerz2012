@@ -7,6 +7,7 @@
 #include "Util/XboxController.h"
 #include "Util/DeadReckoner.h"
 #include "Settings.h"
+#include "RobotSupport.cpp"
 
 const static float TURRET_ROTATION_TICKS = 720;
 
@@ -390,11 +391,118 @@ public:
 		}
 	}
 
-	void OperatorControl(void)
+    void OpTurret(VSPMessage overrideManual)
+    {
+    	// Aim ////////////////////////////////
+    	if(overrideManual.rotationSpeed != 0.0)
+    	{
+    		bBallRotator->Set(overrideManual.rotationSpeed);
+    	}
+    	else
+    	{
+    		bBallRotator->Set(-xboxShoot->GetRightX() / 1.5);
+    	}
+    	
+        
+        
+        float pitchMotorControl = xboxShoot->GetLeftY() / 2.1;
+        // If tilt is too high, will SAY NO!
+        if(tilt->GetVoltage() > 2.28 && pitchMotorControl > 0.0){
+            pitchMotorControl = 0.0;
+        }
+        // If tilt too low, will stop the motor
+        if(tilt->GetVoltage() < 2.0 && pitchMotorControl < 0.0){
+            pitchMotorControl = 0.0;
+        }
+        bBallPitchMotor->Set(pitchMotorControl);
+        
+        
+        
+        // Collect and Shoot bBalls///////////
+        // right button or right trigger (ignoring accidents)
+        if(xboxShoot->GetRB() || xboxShoot->GetRightTrigger() < -.1){
+            shooterState = true;
+        }
+        // left button or left trigger (ignoring accidents)
+        if(xboxShoot->GetLB() || xboxShoot->GetLeftTrigger() > .1){
+            shooterState = false;
+        }
+        if(shooterState){
+            //				speedcontroller.SetSetpoint(0.8);
+            bBallShooterTop->Set(driverStationControl->GetAnalogIn(1));
+            bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2));
+        }else{
+            //				speedcontroller.SetSetpoint(0.0);
+            bBallShooterTop->Set(0.0);
+            bBallShooterBottom->Set(0.0);
+        }
+        shooterArm->Set(xboxShoot->GetA());
+    }
+
+    void OpElevator()
+    {
+        // ELEVATORS //////////////////////////////
+        // REVERSE IS UP ///////////
+        // bottom down
+        if(xboxShoot->GetSelect()){
+            robotElevator->ManualFreezeAll();
+            bBallElevatorBottom->Set(Relay::kOn);
+            bBallElevatorBottom->Set(Relay::kForward);
+        }else
+            // bottom up
+            if(xboxShoot->GetStart()){
+                robotElevator->ManualFreezeAll();
+                bBallElevatorBottom->Set(Relay::kOn);
+                bBallElevatorBottom->Set(Relay::kReverse);
+            }else{
+                bBallElevatorBottom->Set(Relay::kOff);
+            }
+
+        // top down			
+        if(xboxShoot->GetX()){
+            bBallElevatorTop->Set(Relay::kOn);
+            bBallElevatorTop->Set(Relay::kForward);
+        }else
+            // top up
+            if(xboxShoot->GetB()){
+                bBallElevatorTop->Set(Relay::kOn);
+                bBallElevatorTop->Set(Relay::kReverse);
+            }else{
+                bBallElevatorTop->Set(Relay::kOff);
+            }
+
+        robotElevator->PeriodicSystem(xboxShoot->GetY());
+    }
+
+    void OpDriveCollectRampReset()
+    {
+        // Drive //////////////////////////////
+        float speedAdjust = (driverStationControl->GetAnalogIn(4) / 5);
+        myRobot->Periodic(-xboxDrive->GetLeftY() * speedAdjust, -xboxDrive->GetRightY() * speedAdjust, false, // don't use the encoder adjustment now
+        xboxDrive->GetA()); // check for stop system!!
+        // collector ///////////////////////////////
+        if(xboxDrive->GetLB() || xboxDrive->GetLeftTrigger() > .1){
+            bBallCollector->Set(-1.0);
+        }else
+            if((xboxDrive->GetRB() || xboxDrive->GetRightTrigger() < -.1) && !robotElevator->IsRunning){
+                bBallCollector->Set(1.0);
+            }else{
+                bBallCollector->Set(0.0);
+            }
+
+        //Reset DeadReckoner
+        if(xboxDrive->GetSelect()){
+            myRobot->ResetPosition();
+        }
+        // ramp arm
+        robotRampArm->PeriodicSystem(xboxDrive->GetLeftStickClick());
+    }
+
+    void OperatorControl(void)
 	{
 		// any setup?
-		char msgBuf[1024];
 		int loopCount = 0;
+		char msgBuf[1024];
 
 		Switch rampArmSwitch;
 		Switch rampServoSwitch;
@@ -415,128 +523,11 @@ public:
 		{
 			PIDTopShooterSource->Update();
 			PIDBottomShooterSource->Update();
-			// get sensor feedback /////////////////////
-
-//			//turret			
-
-			// Aim ////////////////////////////////
-			bBallRotator->Set(-xboxShoot->GetRightX()/1.5);
-			
-			float pitchMotorControl = xboxShoot->GetLeftY()/2.1;
-			// If tilt is too high, will SAY NO!
-			if (tilt->GetVoltage() > 2.28 && pitchMotorControl > 0.0)
-			{
-				pitchMotorControl = 0.0;
-			}
-			// If tilt too low, will stop the motor
-			if (tilt->GetVoltage() < 2.0 && pitchMotorControl < 0.0)
-			{
-				pitchMotorControl = 0.0;
-			}
-			bBallPitchMotor->Set(pitchMotorControl); 
-			// Collect and Shoot bBalls///////////
-
-			// right button or right trigger (ignoring accidents)
-			if(xboxShoot->GetRB() || xboxShoot->GetRightTrigger() < -.1)
-			{
-				shooterState = true;
-			}
-
-			// left button or left trigger (ignoring accidents)
-			if(xboxShoot->GetLB() || xboxShoot->GetLeftTrigger() > .1)
-			{
-				shooterState = false;
-			}
-
-			if (shooterState)
-			{
-//				speedcontroller.SetSetpoint(0.8);
-				bBallShooterTop->Set(driverStationControl->GetAnalogIn(1));
-				bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2));
-			}
-			else
-			{
-//				speedcontroller.SetSetpoint(0.0);
-				bBallShooterTop->Set(0.0);
-				bBallShooterBottom->Set(0.0);
-			}
-
-			shooterArm->Set(xboxShoot->GetA());
-
 			greenLightControl->SetRaw(10);
-
-			// Drive //////////////////////////////
-			float speedAdjust = (driverStationControl->GetAnalogIn(4)/5);
-			myRobot->Periodic(-xboxDrive->GetLeftY() * speedAdjust,
-					-xboxDrive->GetRightY() * speedAdjust,
-					false, // don't use the encoder adjustment now
-					xboxDrive->GetA()); // check for stop system!!
-
-			// collector ///////////////////////////////
-			if (xboxDrive->GetLB() || xboxDrive->GetLeftTrigger() > .1)
-			{
-				bBallCollector->Set(-1.0);
-			}
-			else if ((xboxDrive->GetRB() || xboxDrive->GetRightTrigger() < -.1) && !robotElevator->IsRunning)
-			{
-				bBallCollector->Set(1.0);						
-			}
-			else
-			{
-				bBallCollector->Set(0.0);
-			}
-
-			// ELEVATORS //////////////////////////////
-
-			// ramp arm
-			robotRampArm->PeriodicSystem(xboxDrive->GetLeftStickClick());
-
-
-			// REVERSE IS UP ///////////
-			// bottom down
-			if (xboxShoot->GetSelect())
-			{
-				robotElevator->ManualFreezeAll();
-				bBallElevatorBottom->Set(Relay::kOn);
-				bBallElevatorBottom->Set(Relay::kForward);						
-			}
-			// bottom up
-			else if (xboxShoot->GetStart())
-			{
-				robotElevator->ManualFreezeAll();
-				bBallElevatorBottom->Set(Relay::kOn);
-				bBallElevatorBottom->Set(Relay::kReverse);						
-			}
-			else
-			{
-				bBallElevatorBottom->Set(Relay::kOff);
-			}
-
-			// top down			
-			if (xboxShoot->GetX())
-			{
-				bBallElevatorTop->Set(Relay::kOn);
-				bBallElevatorTop->Set(Relay::kForward);
-			}
-			// top up
-			else if (xboxShoot->GetB())
-			{
-				bBallElevatorTop->Set(Relay::kOn);
-				bBallElevatorTop->Set(Relay::kReverse);						
-			}
-			else
-			{
-				bBallElevatorTop->Set(Relay::kOff);
-			}
-
-			robotElevator->PeriodicSystem(xboxShoot->GetY());
-
-			//Reset DeadReckoner
-			if(xboxDrive->GetSelect())
-			{
-				myRobot->ResetPosition();
-			}
-
+			
+			VSPMessage message;
+//			printf("%f", message.rotationSpeed);
+			
 			//Robot Server///////////
 			//printf("%d\n", val);
 			memset(msgBuf, 0, sizeof(char) * 1024);
@@ -544,15 +535,16 @@ public:
 				//				printf("Got a message: %s\n", msgBuf);
 
 				processVisionBridge(msgBuf);
-				//speed = atoi(msgBuf);
-				//speed /= 1000;
-				//printf("speed: %f", speed);
+
+				message.rotationSpeed = atoi(msgBuf)/1000;
 			}
+			
+			OpTurret(message);
+			OpDriveCollectRampReset();
+			OpElevator();
 
-			//			bBallRotator->Set(speed1);
-			// bBallShooterBottom->Set(speed2);
-			// greenLightControl->SetRaw(lightValue);
-
+			
+			// logging
 			if(loopCount % 5 == 0)
 			{
 				if (xboxShoot->GetA())
@@ -561,9 +553,9 @@ public:
 					printf(" bWheel: %f", PIDTopShooterSource->PIDGet());
 					printf(" tilt: %f \n", tilt->GetVoltage());
 
-				}						
+				}
 			}
-			
+
 			// random output stuff!! ////////////
 			if(loopCount % 50 == 0)
 			{
