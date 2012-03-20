@@ -13,3 +13,4 @@ struct VSPMessage
 		offset = 0.0;
 	}
 };
+
