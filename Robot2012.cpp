@@ -21,33 +21,6 @@ MSG_Q_ID getRobotMsgQueue()
 	return robotQueue;
 }
 
-class PID
-{
-public:
-	PID(float P, float I, float D)
-	{
-		p = P;
-		i = I;
-		d = D;
-		totalError = 0.0;
-		previousError = 0.0;
-	}
-	float CalculateChange(float CurrentValue, float TargetValue)
-	{
-		float error = TargetValue - CurrentValue;
-		totalError += error;
-		float retError = p * error + i * totalError + d * (error - previousError);
-		previousError = error;
-		return retError;
-	}
-private:
-	float p;
-	float i;
-	float d;
-	float totalError;
-	float previousError;
-};
-
 class SamplePIDOutput : public PIDOutput 
 {
 public:
@@ -64,11 +37,11 @@ private:
 	Victor* _motor;
 };
 
-class SamplePIDSource : public PIDSource 
+class SensorSmoother : public PIDSource 
 {
 public:
 	double PIDSCALE;
-	SamplePIDSource(Encoder* enc) 
+	SensorSmoother(Encoder* enc) 
 	{
 		//"K" is a tuning constant, which you use to adjust the "strength" of the filter. K must be in the range zero to +1. When K=0, there is no filtering. When K=1, the filtering is so "strong" that the filtered value never changes.
 		TUNING_CONSTANT = .8;
@@ -186,10 +159,10 @@ class Robot2012 : public SimpleRobot
 	ElevatorSystem* robotElevator;
 	RampArm *robotRampArm;
 
-	SamplePIDSource* PIDTopShooterSource;
+	SensorSmoother* PIDTopShooterSource;
 //	SamplePIDOutput* PIDTopShooterOut;
 
-	SamplePIDSource* PIDBottomShooterSource;
+	SensorSmoother* PIDBottomShooterSource;
 //	SamplePIDOutput* PIDBottomShooterOut;
 
 	//Shooter *robotShooter;
@@ -203,6 +176,9 @@ class Robot2012 : public SimpleRobot
 	int bBallTopWheelSpeed,
 	bBallBottomWheelSpeed,
 	bBallAngle;
+	
+	PIDScale* PIDTopWheel;
+	PIDScale* PIDBottomWheel;
 	
 //	float WheelSpeedAtKickTop;
 //	float WheelSpeedAtKickBottom;
@@ -230,11 +206,11 @@ public:
 		encoderShooterTop->Start();
 		encoderShooterBottom->Start();
 
-		PIDTopShooterSource = new SamplePIDSource(encoderShooterTop);
+		PIDTopShooterSource = new SensorSmoother(encoderShooterTop);
 //		PIDTopShooterOut = new SamplePIDOutput(bBallShooterTop);
 //		PIDTopShooterSource->PIDSCALE = 1100.0;
 
-		PIDBottomShooterSource = new SamplePIDSource(encoderShooterBottom);
+		PIDBottomShooterSource = new SensorSmoother(encoderShooterBottom);
 //		PIDBottomShooterOut = new SamplePIDOutput(bBallShooterBottom);
 
 		bBallTopWheelSpeed = 0;
@@ -254,6 +230,9 @@ public:
 		//									bBallAngle,
 		//									shooterArm);
 
+		PIDTopWheel = new PIDScale(.1, 0.0, 0.5, 1300.0);
+		PIDBottomWheel = new PIDScale(.1, 0.0, 0.5, 1300.0);
+		
 		shooterState = false;
 	}
 
@@ -414,10 +393,21 @@ public:
         if(tilt->GetVoltage() < 2.0 && pitchMotorControl < 0.0){
             pitchMotorControl = 0.0;
         }
-        bBallPitchMotor->Set(pitchMotorControl);
-        
-        
-        
+        bBallPitchMotor->Set(pitchMotorControl);        
+
+        PIDTopWheel->p = driverStationControl->GetAnalogIn(2);
+        PIDTopWheel->i = driverStationControl->GetAnalogIn(3);
+        PIDTopWheel->d = driverStationControl->GetAnalogIn(4);
+        PIDBottomWheel->p = driverStationControl->GetAnalogIn(2);
+        PIDBottomWheel->i = driverStationControl->GetAnalogIn(3);
+        PIDBottomWheel->d = driverStationControl->GetAnalogIn(4);
+        float topChange = PIDTopWheel->CalculateChange(PIDTopShooterSource->PIDGet(),driverStationControl->GetAnalogIn(1)*800);
+        float botChange = PIDBottomWheel->CalculateChange(PIDBottomShooterSource->PIDGet(),driverStationControl->GetAnalogIn(1)*1300);
+
+		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " PIDTOP: %f", topChange);
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " PIDBOT: %f", botChange);
+		dsLCD->UpdateLCD();
+
         // Collect and Shoot bBalls///////////
         // right button or right trigger (ignoring accidents)
         if(xboxShoot->GetRB() || xboxShoot->GetRightTrigger() < -.1){
@@ -429,10 +419,16 @@ public:
         }
         if(shooterState){
             //				speedcontroller.SetSetpoint(0.8);
-            bBallShooterTop->Set(driverStationControl->GetAnalogIn(1));
-            bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2));
+//            bBallShooterTop->Set(driverStationControl->GetAnalogIn(1));
+//            bBallShooterBottom->Set(driverStationControl->GetAnalogIn(2));
+        	PIDTopWheel->CurrentMotorValue += topChange;
+        	PIDBottomWheel->CurrentMotorValue += botChange;
+        	bBallShooterTop->Set(PIDTopWheel->CurrentMotorValue);
+        	bBallShooterBottom->Set(PIDBottomWheel->CurrentMotorValue);        	
         }else{
             //				speedcontroller.SetSetpoint(0.0);
+        	PIDTopWheel->CurrentMotorValue = 0.0;
+        	PIDBottomWheel->CurrentMotorValue = 0.0;        	
             bBallShooterTop->Set(0.0);
             bBallShooterBottom->Set(0.0);
         }
@@ -477,7 +473,8 @@ public:
     void OpDriveCollectRampReset()
     {
         // Drive //////////////////////////////
-        float speedAdjust = (driverStationControl->GetAnalogIn(4) / 5);
+//        float speedAdjust = (driverStationControl->GetAnalogIn(4) / 5);
+        float speedAdjust = 1.0;
         myRobot->Periodic(-xboxDrive->GetLeftY() * speedAdjust, -xboxDrive->GetRightY() * speedAdjust, false, // don't use the encoder adjustment now
         xboxDrive->GetA()); // check for stop system!!
         // collector ///////////////////////////////
@@ -503,7 +500,8 @@ public:
 		// any setup?
 		int loopCount = 0;
 		char msgBuf[1024];
-
+		VSPMessage message;
+		
 		Switch rampArmSwitch;
 		Switch rampServoSwitch;
 
@@ -525,18 +523,16 @@ public:
 			PIDBottomShooterSource->Update();
 			greenLightControl->SetRaw(10);
 			
-			VSPMessage message;
-//			printf("%f", message.rotationSpeed);
-			
 			//Robot Server///////////
 			//printf("%d\n", val);
 			memset(msgBuf, 0, sizeof(char) * 1024);
 			if (msgQReceive(robotQueue, msgBuf, 1024, NO_WAIT) != ERROR) {
-				//				printf("Got a message: %s\n", msgBuf);
+				printf("Got a message: %s\n", msgBuf);
 
 				processVisionBridge(msgBuf);
 
-				message.rotationSpeed = atoi(msgBuf)/1000;
+				message.rotationSpeed = speed1;
+				printf("%f", message.rotationSpeed);
 			}
 			
 			OpTurret(message);

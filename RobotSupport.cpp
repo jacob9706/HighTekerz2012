@@ -14,3 +14,37 @@ struct VSPMessage
 	}
 };
 
+<<<<<<< HEAD
+=======
+class PIDScale
+{
+public:
+	float p;
+	float i;
+	float d;
+	float CurrentMotorValue;
+	PIDScale(float P, float I, float D, float Scale)
+	{
+		p = P;
+		i = I;
+		d = D;
+		totalError = 0.0;
+		previousError = 0.0;
+		scale = Scale;
+		CurrentMotorValue = 0.0;
+	}
+	float CalculateChange(float CurrentValue, float TargetValue)
+	{
+		float error = TargetValue - CurrentValue;
+		totalError += error;
+		float retError = p * error + i * totalError + d * (error - previousError);
+		previousError = error;
+		return retError / scale;
+	}
+private:
+	float totalError;
+	float previousError;
+	float scale;
+};
+
+>>>>>>> 9ef0810bf43dba7d92f0b710cb3b719a206e6afd
