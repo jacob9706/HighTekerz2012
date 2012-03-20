@@ -3,7 +3,7 @@
 #include "math.h"
 
 const static float allowableInputDifference = .25;
-const static float maxDriveChange = .015;
+const static float maxDriveChange = .02;
 const static float ENCODER_FOLLOW_SCALE = .02;
 
 Drivetrain::Drivetrain(UINT32 left1, UINT32 left2, UINT32 right1, UINT32 right2, Encoder* leftEncoder, Encoder* rightEncoder) 
@@ -24,18 +24,14 @@ Drivetrain::~Drivetrain()
 
 float NewSpeed(float oldSpeed,float newRequestedSpeed)
 {
-	float diff = newRequestedSpeed - oldSpeed;
-	//if(diff > maxDriveChange || diff < -maxDriveChange)
-	if(true)
+	// if new speed is toward positive
+	if(newRequestedSpeed - oldSpeed > 0)
 	{
-		if(diff > 0)
-		{
-			return oldSpeed + maxDriveChange;
-		}
-		else
-		{
-			return oldSpeed - maxDriveChange;
-		}
+		return oldSpeed + maxDriveChange;
+	}
+	else
+	{
+		return oldSpeed - maxDriveChange;
 	}
 }
 
@@ -56,27 +52,25 @@ float Sign(float number)
 	}
 }
 
-float split1 = .1;
-float val1 = .4;
-float split2 = .96;
-float val2 = .60;
+float in1 = .05;
+float out1 = .35;
+float in2 = .96;
+float out2 = .70;
 
-float ratio0 = val1/split1;
-float ratio1 = (val2 - val1)/(split2 - split1);
-float ratio1Add = val1-(ratio1*split1);
-float ratio2 = (1-val2)/(1-split2);
-float ratio2Add = val2-(ratio2*split2);
-
+float ratio0 = out1/in1;
+float ratio1 = (out2 - out1)/(in2 - in1);
+float ratio1Add = out1-(ratio1*in1);
+float ratio2 = (1-out2)/(1-in2);
+float ratio2Add = out2-(ratio2*in2);
 
 float ScaleDriving(float inSpeed)
-{
-			
+{			
 	float calculatedSpeed;
-	if (fabs(inSpeed) < split1)
+	if (fabs(inSpeed) < in1)
 	{
 		calculatedSpeed = inSpeed*ratio0;
 	}
-	else if (fabs(inSpeed) < split2)
+	else if (fabs(inSpeed) < in2)
 	{
 		calculatedSpeed = inSpeed * ratio1 + Sign(inSpeed) * ratio1Add;
 	}
@@ -84,11 +78,10 @@ float ScaleDriving(float inSpeed)
 	{
 		calculatedSpeed = inSpeed * ratio2 + Sign(inSpeed) * ratio2Add;
 	}
-
 	return calculatedSpeed;
 }
 
-void Drivetrain::Periodic(float moveLeftInput, float moveRightInput, bool enableMatchEncoders)
+void Drivetrain::Periodic(float moveLeftInput, float moveRightInput, bool enableMatchEncoders, bool STOP)
 {
 	float leftInputSign = Sign(moveLeftInput);
 	float rightInputSign = Sign(moveRightInput);
@@ -149,6 +142,14 @@ void Drivetrain::Periodic(float moveLeftInput, float moveRightInput, bool enable
 				scaledRight -= (deltaRight - deltaLeft) * ENCODER_FOLLOW_SCALE;
 			}
 		}
+	}
+	
+	if (STOP)
+	{
+		newLeftSpeed = 0.0;
+		newRightSpeed = 0.0;
+		scaledLeft = 0.0;
+		scaledRight = 0.0;
 	}
 
 	RobotDrive::TankDrive(scaledLeft, scaledRight);

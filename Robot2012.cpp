@@ -20,6 +20,33 @@ MSG_Q_ID getRobotMsgQueue()
 	return robotQueue;
 }
 
+class PID
+{
+public:
+	PID(float P, float I, float D)
+	{
+		p = P;
+		i = I;
+		d = D;
+		totalError = 0.0;
+		previousError = 0.0;
+	}
+	float CalculateChange(float CurrentValue, float TargetValue)
+	{
+		float error = TargetValue - CurrentValue;
+		totalError += error;
+		float retError = p * error + i * totalError + d * (error - previousError);
+		previousError = error;
+		return retError;
+	}
+private:
+	float p;
+	float i;
+	float d;
+	float totalError;
+	float previousError;
+};
+
 class SamplePIDOutput : public PIDOutput 
 {
 public:
@@ -388,21 +415,34 @@ public:
 		{
 			PIDTopShooterSource->Update();
 			PIDBottomShooterSource->Update();
-			//			PIDReading = speedcontroller.GetError();
 			// get sensor feedback /////////////////////
 
 //			//turret			
 
 			// Aim ////////////////////////////////
-			bBallRotator->Set(-xboxShoot->GetRightX()/2);
-			bBallPitchMotor->Set((xboxShoot->GetLeftY()/2.1));
+			bBallRotator->Set(-xboxShoot->GetRightX()/1.5);
+			
+			float pitchMotorControl = xboxShoot->GetLeftY()/2.1;
+			// If tilt is too high, will SAY NO!
+			if (tilt->GetVoltage() > 2.28 && pitchMotorControl > 0.0)
+			{
+				pitchMotorControl = 0.0;
+			}
+			// If tilt too low, will stop the motor
+			if (tilt->GetVoltage() < 2.0 && pitchMotorControl < 0.0)
+			{
+				pitchMotorControl = 0.0;
+			}
+			bBallPitchMotor->Set(pitchMotorControl); 
 			// Collect and Shoot bBalls///////////
 
+			// right button or right trigger (ignoring accidents)
 			if(xboxShoot->GetRB() || xboxShoot->GetRightTrigger() < -.1)
 			{
 				shooterState = true;
 			}
 
+			// left button or left trigger (ignoring accidents)
 			if(xboxShoot->GetLB() || xboxShoot->GetLeftTrigger() > .1)
 			{
 				shooterState = false;
@@ -428,7 +468,9 @@ public:
 			// Drive //////////////////////////////
 			float speedAdjust = (driverStationControl->GetAnalogIn(4)/5);
 			myRobot->Periodic(-xboxDrive->GetLeftY() * speedAdjust,
-					-xboxDrive->GetRightY() * speedAdjust);	 // drive with tank style
+					-xboxDrive->GetRightY() * speedAdjust,
+					false, // don't use the encoder adjustment now
+					xboxDrive->GetA()); // check for stop system!!
 
 			// collector ///////////////////////////////
 			if (xboxDrive->GetLB() || xboxDrive->GetLeftTrigger() > .1)
@@ -528,12 +570,6 @@ public:
 				Debug();
 			}
 			
-			// this is the override to stop the motors.
-			if(xboxDrive->GetA())
-			{
-				myRobot->TankDrive(0.0,0.0);
-			}
-
 			loopCount++;
 			Wait(0.005);
 		}
@@ -576,8 +612,8 @@ public:
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " lWheel: %i", myRobot->leftCount);
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " rWheel: %i", myRobot->rightCount);
 
-		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " tWheel: %f", PIDBottomShooterSource->PIDGet());
-		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %f", PIDTopShooterSource->PIDGet());
+		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " bWheel: %f", PIDBottomShooterSource->PIDGet());
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " tWheel: %f", PIDTopShooterSource->PIDGet());
 		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tilt: %f", tilt->GetVoltage());
 //		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " Angle:%f", bBallAngle);
 
