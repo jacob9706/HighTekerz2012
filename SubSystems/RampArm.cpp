@@ -47,7 +47,7 @@ void RampArm::PeriodicSystem(bool ChangeRampState)
 	{
 		elapsedTime = GetFPGATime() - startTime;
 
-		if (elapsedTime < 1000000)
+		if (elapsedTime < 800000)
 		{
 			if (rampGoingDown)
 			{
@@ -58,7 +58,7 @@ void RampArm::PeriodicSystem(bool ChangeRampState)
 				_rampArmServo->SetAngle(0.0);
 			}
 		}
-		else if (elapsedTime < 2000000 && elapsedTime >= 1000000)
+		else if (elapsedTime < 1600000 && elapsedTime >= 800000)
 		{
 			if (rampGoingDown)
 			{

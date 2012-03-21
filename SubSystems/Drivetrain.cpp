@@ -11,7 +11,7 @@ Drivetrain::Drivetrain(UINT32 left1, UINT32 left2, UINT32 right1, UINT32 right2,
 {
 	rightMotorSetting = 0.0;
 	leftMotorSetting = 0.0;
-	SetExpiration(.1);
+	SetExpiration(0.5);//changed from .1 to .5 for debuging
 
 	speedMatchLeftCounterStart = 0;
 	speedMatchRightCounterStart = 0;

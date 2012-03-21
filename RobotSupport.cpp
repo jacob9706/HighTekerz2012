@@ -14,8 +14,6 @@ struct VSPMessage
 	}
 };
 
-<<<<<<< HEAD
-=======
 class PIDScale
 {
 public:
@@ -46,5 +44,3 @@ private:
 	float previousError;
 	float scale;
 };
-
->>>>>>> 9ef0810bf43dba7d92f0b710cb3b719a206e6afd
