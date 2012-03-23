@@ -166,26 +166,32 @@ class Robot2012 : public SimpleRobot
 	EncoderSmoother* BottomShooterSmoothed;
 	Smoother* TiltReadingSmoothed;
 
-	bool shooterState;
-
+	// messages from the computer
 	float msgAngleUp,
 	msgDistance,
 	msgRightBasketAngle,
 	msgCenterBasketAngle,
 	msgLeftBasketAngle;
 
-	//	double PIDReading;
-	UINT8 lightValue;
+	bool shooterWheelState;
 
+	// global current wheel speed
 	float bBallTopWheelSpeed,
 	bBallBottomWheelSpeed,
 	bBallAngle,
-	bBallRotation;
+	bBallRotationLocation;
+
+
+	//	double PIDReading;
+	UINT8 lightValue;
 
 	PIDScale* PIDTopWheel;
 	PIDScale* PIDBottomWheel;
 	PIDScale* PIDTiltReading;
 	PIDScale* PIDTurretRotation;
+	
+	
+	DigitalInput *testCompressor;
 	
 
 	//	float WheelSpeedAtKickTop;
@@ -213,16 +219,18 @@ public:
 		BottomShooterSmoothed = new EncoderSmoother(encoderShooterBottom);
 		TiltReadingSmoothed = new Smoother(tilt->GetVoltage());
 
-		bBallTopWheelSpeed = 0;
-		bBallBottomWheelSpeed = 0;
-		bBallAngle = 0;
+		bBallTopWheelSpeed = 0.0;
+		bBallBottomWheelSpeed = 0.0;
+		bBallAngle = 2.0;
+		bBallRotationLocation = 0.0;
 
 		PIDTopWheel = new PIDScale(11.45, 0.0, 231.85, 1200.0);
 		PIDBottomWheel = new PIDScale(64.2, 0.0, 2500.0, 1200.0);
 		PIDTiltReading = new PIDScale(.25, 0.0, 0.0, 0.287);
 		PIDTurretRotation = new PIDScale(1.0, 0.0, 1.0, 1440.0);
 
-		shooterState = false;
+		shooterWheelState = false;
+		
 	}
 
 	void SetupCameras()
@@ -295,6 +303,8 @@ public:
 		// Air
 		airCompressor = new Compressor(1, 10, 2, 3);
 		airCompressor->Start();
+		
+		testCompressor = new DigitalInput(1,10);
 
 		// Other
 		//		accel = new ADXL345_I2C(1);
@@ -371,7 +381,7 @@ public:
 		bBallAngle = 2.0;
 		bBallBottomWheelSpeed = 0.;
 		bBallTopWheelSpeed = 0.;
-		bBallRotation = 0.0;
+		bBallRotationLocation = 0.0;
 
 		while(IsAutonomous() && IsEnabled())
 		{
@@ -386,7 +396,7 @@ public:
 			float topChange = PIDTopWheel->CalculateChange(TopShooterSmoothed->Get(),bBallTopWheelSpeed);
 			float botChange = PIDBottomWheel->CalculateChange(BottomShooterSmoothed->Get(),bBallBottomWheelSpeed);
 			float tiltChange = PIDTiltReading->CalculateChange(TiltReadingSmoothed->NewValue(tilt->GetVoltage()),bBallAngle);
-			float rotationChange = PIDTurretRotation->CalculateChange((float)(encoderTurretRotation->Get()), bBallRotation);
+			float rotationChange = PIDTurretRotation->CalculateChange((float)(encoderTurretRotation->Get()), bBallRotationLocation);
 			float pitchMotorControl = 0.0;
 			float rotationMotorControl = 0.;
 			// only PID the motors when we are not shooting or it messes with the code
@@ -523,9 +533,9 @@ public:
 			//Left Side Auto
 			if(!driverStationControl->GetAnalogIn(2))
 			{
-				//topSpeed var
+				//bBallTopWheelSpeed var
 				bBallTopWheelSpeed = 20.0 ;
-				//bottomSpeed var
+				//bBallBottomWheelSpeed var
 				bBallBottomWheelSpeed = 1050.0 ;
 
 				if(rotateTurretWait == 0)
@@ -597,103 +607,106 @@ public:
 
 	void OpTurret(bool gotMessage)
 	{
+		
 		// Aim ////////////////////////////////
 		//----------
-		float topSpeed = 1000;
-		//bottomSpeed var
-		float bottomSpeed = 1200 ;
-		float tiltSetting = 0.0;
-		float rotationLocation = 0.0;
-		bool manualRotationOverride = false;
-		bool manualTiltOverride = false;
+		bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*1300/5;
+		//bBallBottomWheelSpeed var
+		bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*1300/5;
+		bBallAngle = 2.0;
+		bBallRotationLocation = 0.0;
+//		bool manualRotationOverride = false;
+//		bool manualTiltOverride = false;
 
-		float tiltChange = PIDTiltReading->CalculateChange(TiltReadingSmoothed->NewValue(tilt->GetVoltage()),tiltSetting);
-		float rotationChange = PIDTurretRotation->CalculateChange((float)(encoderTurretRotation->Get()), driverStationControl->GetAnalogIn(4)*1488.0/2.5 - 1488);
+//		float rotationChange = PIDTurretRotation->CalculateChange((float)(encoderTurretRotation->Get()), driverStationControl->GetAnalogIn(4)*1488.0/2.5 - 1488);
+		float rotationChange = PIDTurretRotation->CalculateChange((float)(encoderTurretRotation->Get()), bBallRotationLocation);
 
 		//rotator here.....--------------------------------------------------------------------------
+
+		
+		//If we see the basket set speed to offset of basket
+		if(msgCenterBasketAngle > -6000 && msgCenterBasketAngle < 6000)
+		{
+			bBallRotationLocation += msgCenterBasketAngle/2;
+		}
+
+
 		if(fabs(xboxShoot->GetRightX()) > .2)
 		{
-			rotationLocation = xboxShoot->GetRightX() / 1.5;
-			manualRotationOverride = true;
+			rotationChange = xboxShoot->GetRightX() / 1.3;
+			bBallRotationLocation = encoderTurretRotation->Get();			
 		}
 		else
 		{
-			if(manualRotationOverride)
-			{
-				rotationLocation = encoderTurretRotation->Get();
-				manualRotationOverride = false;
-			}
-			rotationLocation = rotationChange;
+//			bBallRotation = rotationChange;
 		}
 		// If rotation is too high, will SAY NO!
-		if(encoderTurretRotation->Get() > TURRET_ROTATION_TICKS && rotationLocation > 0.0){
-			rotationLocation = 0.0;
+		if(encoderTurretRotation->Get() > TURRET_ROTATION_TICKS && bBallRotationLocation > 0.0){
+			rotationChange = 0.0;
 		}
 		// If rotation too low, will stop the motor
-		if(encoderTurretRotation->Get() < -TURRET_ROTATION_TICKS && rotationLocation < 0.0){
-			rotationLocation = 0.0;
+		if(encoderTurretRotation->Get() < -TURRET_ROTATION_TICKS && bBallRotationLocation < 0.0){
+			rotationChange = 0.0;
 		}
 
-		//If we see the basket set speed to offset of basket
-		if(msgCenterBasketAngle > -60000 && msgCenterBasketAngle < 60000)
-		{
-			rotationLocation = msgCenterBasketAngle/2;
-		}
-
-		bBallRotator->Set(rotationLocation);
+		bBallRotator->Set(rotationChange);
 		
 		
 		//---------------------------------------------Tilt--------------------------------
-		
+
+		float tiltChange = PIDTiltReading->CalculateChange(TiltReadingSmoothed->NewValue(tilt->GetVoltage()),bBallAngle);
+
 		if(fabs(xboxShoot->GetLeftY()) > 0.2)
 		{
-			tiltSetting = xboxShoot->GetLeftY() / 2.1;
+			tiltChange = xboxShoot->GetLeftY() / 2.1;
+			bBallAngle = TiltReadingSmoothed->NewValue(tilt->GetVoltage());
 		}
-		else
-		{
-			if(tiltChange < 0 )
-			{
-				tiltSetting = tiltChange * 8.0;
-			}
-			else
-			{
-				tiltSetting = tiltChange * 10.0;
-			}
-		}
+//      this code is for vpc
+//		else
+//		{
+//			if(tiltChange < 0 )
+//			{
+//				bBallAngle = tiltChange * 8.0;
+//			}
+//			else
+//			{
+//				bBallAngle = tiltChange * 10.0;
+//			}
+//		}
 		// If tilt is too high, will SAY NO!
-		if(tilt->GetVoltage() > 2.28 && tiltSetting > 0.0){
-			tiltSetting = 0.0;
+		if(tilt->GetVoltage() > 2.28 && tiltChange > 0.0){
+			tiltChange = 0.0;
 		}
 		// If tilt too low, will stop the motor
-		if(tilt->GetVoltage() < 2.0 && tiltSetting < 0.0){
-			tiltSetting = 0.0;
+		if(tilt->GetVoltage() < 2.0 && tiltChange < 0.0){
+			tiltChange = 0.0;
 		}
-		bBallPitchMotor->Set(tiltSetting);
+		bBallPitchMotor->Set(tiltChange);
+
+		//------------ shoot the ball with the arm ---------------------//
+		shooterArm->Set(xboxShoot->GetA());
+
 		
-		
+		//------------------------------- spin wheels -----------------------
 		
 		//Spin up wheels
-		float topChange = PIDTopWheel->CalculateChange(TopShooterSmoothed->Get(),topSpeed);
-		float botChange = PIDBottomWheel->CalculateChange(BottomShooterSmoothed->Get(),bottomSpeed);
+		float topChange = PIDTopWheel->CalculateChange(TopShooterSmoothed->Get(),bBallTopWheelSpeed);
+		float botChange = PIDBottomWheel->CalculateChange(BottomShooterSmoothed->Get(),bBallBottomWheelSpeed);
 
 		// Collect and Shoot bBalls///////////
 		// right button or right trigger (ignoring accidents)
 		if(xboxShoot->GetRB() || xboxShoot->GetRightTrigger() < -.1){
-			shooterState = true;
+			shooterWheelState = true;
 		}
 
 		// left button or left trigger (ignoring accidents)
 		if(xboxShoot->GetLB() || xboxShoot->GetLeftTrigger() > .1){
-			shooterState = false;
+			shooterWheelState = false;
 		}
 
-		if(shooterState){
-
-			if (xboxShoot->GetA())
-			{
-
-			}
-			else
+		if(shooterWheelState)
+		{
+			if (!shooterArm)
 			{
 				PIDTopWheel->CurrentMotorValue += topChange;
 				if (PIDTopWheel->CurrentMotorValue > 1) { PIDTopWheel->CurrentMotorValue = 1; }
@@ -705,14 +718,14 @@ public:
 
 			bBallShooterTop->Set(PIDTopWheel->CurrentMotorValue);
 			bBallShooterBottom->Set(PIDBottomWheel->CurrentMotorValue);        	
-		}else{
-			//				speedcontroller.SetSetpoint(0.0);
+		}
+		else
+		{
 			PIDTopWheel->zeroOut();
 			PIDBottomWheel->zeroOut();        	
 			bBallShooterTop->Set(0.0);
 			bBallShooterBottom->Set(0.0);
 		}
-		shooterArm->Set(xboxShoot->GetA());
 	}
 
 	void OpElevator()
@@ -786,6 +799,7 @@ public:
 
 		rampArm->Set(false);
 		robotElevator->ManualFreezeAll();
+		shooterWheelState = false;
 
 		while (IsOperatorControl())
 		{
@@ -846,14 +860,16 @@ public:
 	void Debug()
 	{
 		dsLCD->Clear();
-		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " bWheel: %f", BottomShooterSmoothed->Get());
-
-		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " lWheel: %i", myRobot->leftCount);
-		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " rWheel: %i", myRobot->rightCount);
+		
+		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " lWheel: %i, %i", myRobot->leftCount, myRobot->rightCount);
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " tilt: %f", tilt->GetVoltage());
+		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tWheel: %i", encoderShooterTop->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " bWheel: %i", encoderShooterBottom->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " top: %i", encoderTurretRotation->Get() );
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " testCompressor:%d", testCompressor->Get());
 
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " bWheel: %f", BottomShooterSmoothed->Get());
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " tWheel: %f", TopShooterSmoothed->Get());
-		//		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tilt: %f", tilt->GetVoltage());
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " Angle:%f", bBallAngle);
 
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, "X position: %f  ", myRobot->PositionX()  );
@@ -862,15 +878,12 @@ public:
 		//		
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " bWheel: %f", encoderShooterBottom->Get());
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tWheel: %f", encoderShooterTop->GetFPGAPeriod()*1000);
-		//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " bWheel: %f", encoderShooterBottom->GetFPGAPeriod()*1000);
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " left: %f", myRobot->scaledLeft);
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " right: %f", myRobot->scaledRight);
 
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tRot:%i", encoderTurretRotation->Get());
 
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " isRunnng: %d", msg);
-		//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " bottom: %d", bBallElevatorBottomLimit->Get());
-		//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " top: %d", bBallElevatorTopLimit->Get());
 
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " topSwitch: %s", bBallElevatorTopLimit->Get());
 
