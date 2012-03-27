@@ -83,8 +83,8 @@ float ScaleDriving(float inSpeed)
 
 void Drivetrain::Periodic(float moveLeftInput, float moveRightInput, bool enableMatchEncoders, bool STOP)
 {
-	//moveLeftInput = -moveLeftInput;
-	//moveRightInput = -moveRightInput;
+	moveLeftInput = -moveLeftInput;
+	moveRightInput = -moveRightInput;
 	
 	float leftInputSign = Sign(moveLeftInput);
 	float rightInputSign = Sign(moveRightInput);
