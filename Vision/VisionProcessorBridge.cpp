@@ -9,7 +9,7 @@
 #include "msgQLib.h"
 #include "VisionProcessorBridge.h"
 
-/* defines */ 
+/* defines */
 #define SERVER_PORT_NUM         5001   /* server's port number for bind() */ 
 #define SERVER_WORK_PRIORITY    100    /* priority of server's work task */ 
 #define SERVER_STACK_SIZE       10000  /* stack size of server's work task */ 
@@ -42,8 +42,8 @@ STATUS tcpServer (void)
     int                 sockAddrSize;  /* size of socket address structure */ 
     int                 sFd;           /* socket file descriptor */ 
     int                 newFd;         /* socket descriptor from accept */ 
-    int                 ix = 0;        /* counter for work task names */ 
-    char                workName[16];  /* name of work task */
+    //int                 ix = 0;        /* counter for work task names */ 
+    //char                workName[16];  /* name of work task */
 
     /* set up the local address */
 
