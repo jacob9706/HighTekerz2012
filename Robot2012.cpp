@@ -873,9 +873,9 @@ public:
 			//if X on drive stick shoot from side of our bridge
 			else if(xboxDrive->GetX())
 			{
-				bBallAngle = 2.01; 
+				bBallAngle = 1.96; 
 				bBallTopWheelSpeed = 400.0;
-				bBallBottomWheelSpeed = 1320.0;				
+				bBallBottomWheelSpeed = 1340.0;				
 			}
 			
 			TopShooterSmoothed->Update();
