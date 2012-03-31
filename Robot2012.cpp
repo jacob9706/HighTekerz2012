@@ -857,9 +857,27 @@ public:
 
 		while (IsOperatorControl())
 		{
-			bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*1300/5;
-			bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*1300/5;
-
+			//If no button is pushed manual angle an wheel speed
+			if(!xboxDrive->GetB() && !xboxDrive->GetX())
+			{
+				bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*1300/5;
+				bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*1300/5;
+			}
+			//if B on drive stick shoot from freethrow line
+			else if(xboxDrive->GetB())
+			{
+				bBallAngle = 2.04; 
+				bBallTopWheelSpeed = 170.0;
+				bBallBottomWheelSpeed = 1080.0;
+			}
+			//if X on drive stick shoot from side of our bridge
+			else if(xboxDrive->GetX())
+			{
+				bBallAngle = 2.01; 
+				bBallTopWheelSpeed = 400.0;
+				bBallBottomWheelSpeed = 1320.0;				
+			}
+			
 			TopShooterSmoothed->Update();
 			BottomShooterSmoothed->Update();
 			greenLightControl->SetRaw(128);
