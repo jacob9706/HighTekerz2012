@@ -753,8 +753,17 @@ public:
 
 		if(fabs(xboxShoot->GetLeftY()) > 0.2)
 		{
-			tiltChange = xboxShoot->GetLeftY() / 2.1;
+			tiltChange = xboxShoot->GetLeftY();
 			bBallAngle = TiltReadingSmoothed->NewValue(tilt->GetVoltage());
+			
+			if(tiltChange < 0 )
+			{
+				tiltChange /= 2.1;
+			}
+			else
+			{
+				tiltChange /= 6.0;
+			}
 		}
 //      this code is for vpc
 //		else
