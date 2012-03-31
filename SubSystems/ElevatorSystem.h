@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #ifndef __ELEVATORSYSTEM_H
 #define __ELEVATORSYSTEM_H
 
@@ -44,7 +43,7 @@ private:
 
 
 #endif
-=======
+
 #ifndef __ELEVATORSYSTEM_H
 #define __ELEVATORSYSTEM_H
 
@@ -90,4 +89,3 @@ private:
 
 
 #endif
->>>>>>> 5cf0ff622f058e49bd836e49cbd450d29583cd9d

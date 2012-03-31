@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #ifndef __SWITCH_H
 #define __SWITCH_H
 
@@ -14,7 +13,7 @@ private:
 };
 
 #endif
-=======
+
 #ifndef __SWITCH_H
 #define __SWITCH_H
 
@@ -30,4 +29,3 @@ private:
 };
 
 #endif
->>>>>>> 5cf0ff622f058e49bd836e49cbd450d29583cd9d

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 struct VSPMessage
 {
 	float rotationSpeed;
@@ -68,7 +67,7 @@ public:
 private:
 	float scale;
 };
-=======
+
 struct VSPMessage
 {
 	float rotationSpeed;
@@ -138,4 +137,3 @@ public:
 private:
 	float scale;
 };
->>>>>>> 5cf0ff622f058e49bd836e49cbd450d29583cd9d

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 //		GREEN_LIGHT new  PWM(1,6);
 //
 //		bBallPitchMotor = new Victor(2,3);
@@ -44,7 +43,7 @@
 //
 //		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight);	// create robot drive base
 //		
-=======
+
 //		GREEN_LIGHT new  PWM(1,6);
 //
 //		bBallPitchMotor = new Victor(2,3);
@@ -90,4 +89,3 @@
 //
 //		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight);	// create robot drive base
 //		
->>>>>>> 5cf0ff622f058e49bd836e49cbd450d29583cd9d

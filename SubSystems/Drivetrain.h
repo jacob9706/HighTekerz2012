@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #ifndef __DRIVETRAIN_H
 #define __DRIVETRAIN_H
 
@@ -28,7 +27,7 @@ private:
 };
 
 #endif
-=======
+
 #ifndef __DRIVETRAIN_H
 #define __DRIVETRAIN_H
 
@@ -58,4 +57,3 @@ private:
 };
 
 #endif
->>>>>>> 5cf0ff622f058e49bd836e49cbd450d29583cd9d
