@@ -411,10 +411,7 @@ public:
 		{
 //			dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, "top wheel %f", TopShooterSmoothed->Get());
 //			dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, "bottom wheel %f", BottomShooterSmoothed->Get());
-
-			//Added to correct PID loop not working
-			TopShooterSmoothed->Update();
-			BottomShooterSmoothed->Update();
+			
 
 			/* this is the section for 1
 			 * turn OFF 
@@ -492,11 +489,9 @@ public:
 			//Left Side Auto
 			if(!driverStationControl->GetDigitalIn(2))
 			{
-				//bBallTopWheelSpeed var
-				bBallTopWheelSpeed = 20.0 ;
-				//bBallBottomWheelSpeed var
-				bBallBottomWheelSpeed = 1050.0 ;
-				
+				bBallAngle = 2.04; 
+				bBallTopWheelSpeed = 170.0;
+				bBallBottomWheelSpeed = 1080.0;
 				shooterWheelState = true;
 
 				if(wheelSpinupStart == 0)
@@ -504,7 +499,7 @@ public:
 					wheelSpinupStart = GetFPGATime();
 				}
 				//Rotate turret right for 1 second
-				if(GetFPGATime() - wheelSpinupStart < 4000000)
+				if(GetFPGATime() - wheelSpinupStart < 6000000)
 				{
 					// wait for go time
 //					bBallRotator->Set(.6);
@@ -541,6 +536,10 @@ public:
 					}
 				}
 			}
+			
+			
+			
+				
 
 
 
@@ -570,11 +569,11 @@ public:
 				}
 				else if(msgCenterBasketAngle > 0)
 				{
-					bBallRotator->Set(msgCenterBasketAngle * 0.6 / 5 + 0.2);
+					bBallRotator->Set(msgCenterBasketAngle * 0.4 / 5 + 0.1);
 				}
 				else if(msgCenterBasketAngle < 0)
 				{
-					bBallRotator->Set(msgCenterBasketAngle * 0.6 / 5 - 0.2);
+					bBallRotator->Set(msgCenterBasketAngle * 0.4 / 5 - 0.1);
 				}
 				//End Follow Turret
 				
@@ -687,7 +686,7 @@ public:
 			{
 				shooterArm->Set(true);
 			}
-			else if(GetFPGATime() - opShooterTimer < 550000)
+			else if(GetFPGATime() - opShooterTimer < 1000000)
 			{
 				shooterArm->Set(false);
 			}
@@ -758,11 +757,11 @@ public:
 			
 			if(tiltChange < 0 )
 			{
-				tiltChange /= 2.1;
+				tiltChange /= 4.0;
 			}
 			else
 			{
-				tiltChange /= 6.0;
+				tiltChange /= 2.1;
 			}
 		}
 //      this code is for vpc
@@ -789,6 +788,8 @@ public:
 		
 		
 		//------------------------------- spin wheels -----------------------
+		TopShooterSmoothed->Update();
+		BottomShooterSmoothed->Update();
 		
 		//Spin up wheels
 		float topChange = PIDTopWheel->CalculateChange(TopShooterSmoothed->Get(),bBallTopWheelSpeed);
@@ -934,8 +935,6 @@ public:
 				bBallBottomWheelSpeed = 1340.0;				
 			}
 			
-			TopShooterSmoothed->Update();
-			BottomShooterSmoothed->Update();
 			greenLightControl->SetRaw(128);
 
 			//Robot Server///////////
