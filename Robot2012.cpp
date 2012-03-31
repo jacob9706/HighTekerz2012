@@ -953,8 +953,7 @@ public:
 			OpElevator();
 
 			//------------ shoot the ball with the arm ---------------------//
-					shooterArm->Set(xboxShoot->GetA());
-		
+			OpShooter(xboxShoot->GetA());
 
 			
 			// log once in a while, not every time
