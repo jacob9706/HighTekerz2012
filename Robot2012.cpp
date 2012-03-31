@@ -177,7 +177,8 @@ class Robot2012 : public SimpleRobot
 	msgLeftBasketAngle;
 
 	bool shooterWheelState;
-
+	bool shooting;
+	
 	// global current wheel speed
 	float bBallTopWheelSpeed,
 	bBallBottomWheelSpeed,
@@ -187,6 +188,9 @@ class Robot2012 : public SimpleRobot
 
 	//	double PIDReading;
 	UINT8 lightValue;
+	
+	UINT32 opShooterTimer;
+	
 
 	PIDScale* PIDTopWheel;
 	PIDScale* PIDBottomWheel;
@@ -233,9 +237,10 @@ public:
 		PIDTurretRotation = new PIDScale(1.0, 0.0, 1.0, 1440.0);
 
 		shooterWheelState = false;
+		shooting = false;
 		
+		opShooterTimer = 0;
 	}
-
 	void SetupCameras()
 	{
 		//setup cameras
@@ -382,6 +387,7 @@ public:
 	{
 
 		myRobot->ResetPosition();
+		shooterArm->Set(false);
 
 		UINT32 waitForArmFirstShot = 0;
 		//UINT32 waitForArmSecondShot = 0;
@@ -632,11 +638,13 @@ public:
 						shooting = true;
 						shooterArm->Set(true);
 						autoDone = true;
-						robotRampArm->PeriodicSystem(false);
+						if(!robotRampArm->IsRampUp && autoDone)
+						{
+							robotRampArm->PeriodicSystem(true);
+						}
 					}
 				}
 			}
-			
 
 			/* this is the section for 8
 			 * turn OFF 
@@ -660,6 +668,45 @@ public:
 		}
 	}
 
+	void OpShooter(bool wantToShoot)
+	{
+		if(wantToShoot && !shooting)
+		{
+			shooting = true;
+		}
+		
+		if(shooting)
+		{
+			
+			if(opShooterTimer == 0)
+			{
+				opShooterTimer = GetFPGATime();
+			}
+		
+			if(GetFPGATime() - opShooterTimer < 500000)
+			{
+				shooterArm->Set(true);
+			}
+			else if(GetFPGATime() - opShooterTimer < 550000)
+			{
+				shooterArm->Set(false);
+			}
+			else
+			{
+				shooting = false;
+				opShooterTimer = 0;
+			}
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	void OpTurret(bool gotMessage)
 	{
 		// Aim ////////////////////////////////
@@ -907,7 +954,7 @@ public:
 
 			//------------ shoot the ball with the arm ---------------------//
 					shooterArm->Set(xboxShoot->GetA());
-
+		
 
 			
 			// log once in a while, not every time
