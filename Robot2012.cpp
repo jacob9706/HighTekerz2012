@@ -397,15 +397,21 @@ public:
 		UINT32 wheelSpinupStart = 0;
 		UINT32 loadSecondBallWait = 0;
 		UINT32 elapsedTime = 0;
+		UINT32 loadBallWait = 0;
 		
 		//Auto one steps
 		bool startCycle = true;
 		bool shotFirstBall = false;
 		bool shotSecondBall = false;
-		bool driveDone = false;
+		bool drivenToBridge = false;
 		bool shooting = false;
 		bool autoDone = false;
+		bool backedUp = false;
+		bool ballLoaded = true;
 		
+		float
+		calculatedBottom = 0,
+		calculatedTop = 0;
 
 		bBallAngle = 2.0;
 		bBallBottomWheelSpeed = 0.0;
@@ -477,9 +483,9 @@ public:
 				}
 				if(myRobot->PositionY() >= 71.0)
 				{
-					driveDone = true;
+					drivenToBridge = true;
 				}
-				if(driveDone)
+				if(drivenToBridge)
 				{
 					shooterArm->Set(true);
 				}
@@ -608,11 +614,121 @@ public:
 				}
 			}
 
+			
+			
+			
+			/*
+			 * ========================= Select 5 ==============================
+			 * 
+			 * Drive to bridge and shoot on the way
+			 * Lower Bridge
+			 * Drive back
+			 * Shoot again
+			 */
+			
+			if(!driverStationControl->GetDigitalIn(5)){
+				/*
+				 * VERY Rough calculation of wheel speeds 
+				 * could not find direct correlation between
+				 * distance and wheel speed
+				 * 
+				 * 194.5 = initial position from basket)
+				 */
+				calculatedBottom = (myRobot->PositionY() + 194.5) * 6.19;
+				calculatedTop = (myRobot->PositionY() + 194.5) * 1.48;
 				
+				
+				//Turn on shooter wheels
+				shooterWheelState = true;
+
+				//Follow Turret
+				processVSPMessage();				
+
+				//Ramp arm down
+				if(robotRampArm->IsRampUp && !autoDone)
+				{
+					robotRampArm->PeriodicSystem(true);
+				}
+				
+				
+				//Shoot first ball on the way
+				if(!shotFirstBall){
+					//Check if wheels are at right speed for position
+					if(BottomShooterSmoothed->Get() >= calculatedBottom - 20 && BottomShooterSmoothed->Get() >= calculatedBottom -20){
+						OpShooter(true);
+						shotFirstBall = true;
+						ballLoaded = false;
+					}
+					else{
+						OpShooter(false);
+					}
+				}
+				
+				if(!ballLoaded){
+					bBallElevatorTop->Set(Relay::kOn);
+					bBallElevatorTop->Set(Relay::kReverse);
+
+					if(loadBallWait == 0)
+					{
+						loadBallWait = GetFPGATime();
+					}
+					if(GetFPGATime() - loadBallWait > 4000000)
+					{
+						loadBallWait = 0;
+						ballLoaded = true;
+					}
+				}
+				
+				//Drive to bridge
+				if(!drivenToBridge){
+					if(myRobot->PositionY() < 60){
+						myRobot->Periodic(-(driverStationControl->GetAnalogIn(4)/5), -(driverStationControl->GetAnalogIn(4)/5), true);
+					}
+					else{
+						myRobot->Periodic(0.0, 0.0, true);
+						drivenToBridge = true;
+					}
+				}
+				
+				//Got to bridge, now backup
+				if(drivenToBridge){
+					if(myRobot->PositionY() > 50){
+						myRobot->Periodic((driverStationControl->GetAnalogIn(4)/5), (driverStationControl->GetAnalogIn(4)/5), true);
+					}
+					else{
+						myRobot->Periodic(0.0, 0.0, true);
+						backedUp = true;
+					}
+				}
+				
+				//Backed up, now shoot again
+				if(backedUp && shotFirstBall && !shotSecondBall && ballLoaded){
+					OpShooter(true);
+					shotSecondBall = true;
+					autoDone = true;
+				}
+				
+				if(autoDone){
+					if(!robotRampArm->IsRampUp && autoDone)
+					{
+						robotRampArm->PeriodicSystem(true);
+					}
+				}
+				
+			}
 
 
 
-			//=========================== Select 6 Drive To Bridge Then Shoot==================================
+			/*
+			 * ========================= Select 6 ==============================
+			 * 
+			 * Drive to bridge
+			 * Lower bridge
+			 * Shoot twice
+			 * Back up
+			 * Raise Arm
+			 */
+			
 			if(!driverStationControl->GetDigitalIn(6))
 			{
 				//set angle to make it from the bridge
@@ -657,10 +773,10 @@ public:
 					}
 					if(GetFPGATime() - wheelSpinupStart > 5000000)
 					{
-						driveDone = true;
+						drivenToBridge = true;
 					}
 				}
-				if(driveDone && !shotFirstBall)
+				if(drivenToBridge && !shotFirstBall)
 				{
 					//take first shot
 					shooting = true;
@@ -715,9 +831,10 @@ public:
 				}
 			}
 
-			/* this is the section for 8
-			 * turn OFF 
-			 * 8
+			/*
+			 * ========================= Select 8 ==============================
+			 * 
+			 * Test Angle
 			 */
 
 			if(!driverStationControl->GetDigitalIn(8)){
