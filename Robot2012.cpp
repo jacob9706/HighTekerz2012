@@ -396,8 +396,11 @@ public:
 		//UINT32 waitForArmSecondShot = 0;
 		UINT32 wheelSpinupStart = 0;
 		UINT32 loadSecondBallWait = 0;
+		UINT32 timer = 0;
 		UINT32 elapsedTime = 0;
 		UINT32 loadBallWait = 0;
+		
+		int state = 0;
 		
 		//Auto one steps
 		bool startCycle = true;
@@ -564,15 +567,18 @@ public:
 			
 			
 			
-			//Freethrow Line 2
+			//Freethrow Line 2 (switch 3)
 			if(!driverStationControl->GetDigitalIn(3))
 			{
 				myRobot->Periodic(0.0, 0.0, true);
 				bBallAngle = 2.06;
 				bBallTopWheelSpeed = 170.0;
 				bBallBottomWheelSpeed = 1080.0;
+				
 				shooterWheelState = true;
 
+				processVSPMessage();
+				
 				if(wheelSpinupStart == 0)
 				{
 					wheelSpinupStart = GetFPGATime();
@@ -616,6 +622,110 @@ public:
 				}
 			}
 
+			/*
+			 * ========================= Select 4 ==============================
+			 * 
+			 * Drive to bridge
+			 * Lower Bridge
+			 * Drive back
+			 * Shoot twice
+			 */
+			
+			if(!driverStationControl->GetDigitalIn(4))
+			{
+				
+				//set angle to make it from top of key
+				bBallAngle = 2.04;
+
+				//Set Wheel Speeds to make it from the bridge    
+				bBallTopWheelSpeed = 400.0;
+				bBallBottomWheelSpeed = 1100.0;
+				
+				shooterWheelState = true;
+				
+				processVSPMessage();
+				
+				if(state == 0)
+				{
+					robotRampArm->PeriodicSystem(true);
+					state++;
+				}
+				//drive to bridge
+				if(state == 1)
+				{
+					if(myRobot->PositionY() < 60.0)
+					{
+						myRobot->Periodic(-(driverStationControl->GetAnalogIn(4)/5.), -(driverStationControl->GetAnalogIn(4)/5.), true);
+					}
+					else
+					{
+						state++;
+					}
+				}
+				//wait
+				if(state == 2)
+				{
+					if(timer == 0)
+					{
+						timer = GetFPGATime();
+					}
+					if(GetFPGATime() - timer < 2000000)
+					{
+						myRobot->Periodic(0.0, 0.0, true);
+					}
+					else
+					{
+						state++;
+						timer = 0;
+					}
+				}
+				//drive back
+				if(state == 3)
+				{
+					if(myRobot->PositionY() >= 0.0)
+					{
+						myRobot->Periodic((driverStationControl->GetAnalogIn(4)/5.), (driverStationControl->GetAnalogIn(4)/5.), true);
+					}
+					else
+					{
+						state++;
+					}
+				}
+				//shoot
+				if(state == 4)
+				{
+					myRobot->Periodic(0.0, 0.0, true);
+					if(timer == 0)
+					{
+						timer = GetFPGATime();
+					}
+					
+					elapsedTime = GetFPGATime() - timer;
+					
+					if(elapsedTime < 500000)
+					{
+						
+					}
+					else if(elapsedTime < 600000)
+					{
+						OpShooter(true);
+						robotElevator->PeriodicSystem(true);
+						robotRampArm->PeriodicSystem(true);
+					}
+					else if(elapsedTime < 5000000)
+					{
+						//wait
+					}
+					else if(elapsedTime < 5100000)
+					{
+						OpShooter(true);
+					}
+				}
+				robotRampArm->PeriodicSystem(false);
+				robotElevator->PeriodicSystem(false);
+				OpShooter(false);
+			}
+			
 			
 			
 			
@@ -1117,8 +1227,8 @@ public:
 			//If no button is pushed manual angle and wheel speed
 			if(!xboxDrive->GetB() && !xboxDrive->GetX())
 			{
-				bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*100.0;
-				bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*100.0;
+				bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*1000.0;
+				bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*1000.0;
 			}
 			//if B on drive stick shoot from freethrow line
 			else if(xboxDrive->GetB())
