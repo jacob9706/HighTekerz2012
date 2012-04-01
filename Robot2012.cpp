@@ -660,7 +660,13 @@ public:
 				//Shoot first ball on the way
 				if(!shotFirstBall){
 					//Check if wheels are at right speed for position
-					if(BottomShooterSmoothed->Get() >= calculatedBottom - 20 && BottomShooterSmoothed->Get() >= calculatedBottom -20){
+					if(BottomShooterSmoothed->Get() >= calculatedBottom - 20 &&
+							TopShooterSmoothed->Get() >= calculatedTop -20 && 
+							(calculatedAngle > tilt->GetVoltage() - 0.08 && 
+									calculatedAngle < tilt->GetVoltage() + 0.08
+							)
+					)
+					{
 						OpShooter(true);
 						shotFirstBall = true;
 						ballLoaded = false;
