@@ -411,7 +411,9 @@ public:
 		
 		float
 		calculatedBottom = 0,
-		calculatedTop = 0;
+		calculatedTop = 0,
+		// To keep in range just in case
+		calculatedAngle = 2.0;
 
 		bBallAngle = 2.0;
 		bBallBottomWheelSpeed = 0.0;
@@ -634,9 +636,13 @@ public:
 				 * 
 				 * 194.5 = initial position from basket)
 				 */
-				calculatedBottom = (myRobot->PositionY() + 194.5) * 6.19;
+				calculatedAngle = (myRobot->PositionY() + 194.5) / 102;
 				calculatedTop = (myRobot->PositionY() + 194.5) * 1.48;
+				calculatedBottom = (myRobot->PositionY() + 194.5) * 6.19;
 				
+				bBallAngle = calculatedAngle;
+				bBallTopWheelSpeed = calculatedTop;
+				bBallBottomWheelSpeed = calculatedBottom;
 				
 				//Turn on shooter wheels
 				shooterWheelState = true;
