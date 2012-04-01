@@ -744,11 +744,11 @@ public:
 			if(!driverStationControl->GetDigitalIn(6))
 			{
 				//set angle to make it from the bridge
-				bBallAngle = 2.01; 
+				bBallAngle = 2.01;
 
 
 				//Set Wheel Speeds to make it from the bridge    
-				bBallTopWheelSpeed = 400.;
+				bBallTopWheelSpeed = 400.0;
 				bBallBottomWheelSpeed = 1320.0;
 //				bBallBottomWheelSpeed = 1800.0;
 //				bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*1300/5;
@@ -769,13 +769,16 @@ public:
 				//drive to bridge
 				if(myRobot->PositionY() < 60.0)
 				{
-					myRobot->Periodic(-(driverStationControl->GetAnalogIn(4)/5), -(driverStationControl->GetAnalogIn(4)/5), true);
+					myRobot->Periodic(-(driverStationControl->GetAnalogIn(4)/5.), -(driverStationControl->GetAnalogIn(4)/5.), true);
 				}
 
 				//reached bridge
 				else
 				{
-					myRobot->Periodic(0.0, 0.0, true);
+					if(!shotSecondBall)
+					{
+						myRobot->Periodic(0.0, 0.0, true);
+					}
 				}
 				if(myRobot->PositionY() >= 60.0)
 				{
@@ -819,9 +822,6 @@ public:
 						shooting = true;
 						shooterArm->Set(true);
 						
-						//forward
-						
-						
 						shotSecondBall = true;
 						
 					}
@@ -830,7 +830,7 @@ public:
 				{
 					if(myRobot->PositionY() >= 30.0)
 					{
-						myRobot->Periodic((driverStationControl->GetAnalogIn(4)/5), (driverStationControl->GetAnalogIn(4)/5), true);
+						myRobot->Periodic((driverStationControl->GetAnalogIn(4)/5.), (driverStationControl->GetAnalogIn(4)/5.), true);
 					}
 					else
 					{
@@ -843,41 +843,7 @@ public:
 				}
 			}
 
-			/*
-			 * ========================= Select 8 ==============================
-			 * 
-			 * Test Angle
-			 */
-
-			if(!driverStationControl->GetDigitalIn(8)){
-
-				myRobot->Periodic(0.0, 0.0, true);
-
-				if(waitForArmFirstShot == 0)
-				{
-					waitForArmFirstShot = GetFPGATime();
-				}
-				
-				elapsedTime = GetFPGATime() - waitForArmFirstShot;
-				
-				if(elapsedTime < 5000000)
-				{
-					bBallAngle = 2.00;
-				}
-				else if(elapsedTime < 10000000)
-				{
-					bBallAngle = 2.14;
-				}
-				else if(elapsedTime < 15000000)
-				{
-					bBallAngle = 2.28;
-				}
-				else if(elapsedTime < 20000000)
-				{
-					bBallAngle = 2.06;
-				}
-			}
-
+			driverStationControl->SetDigitalOut(3, shotSecondBall);
 			OpTurret(false);
 			Debug();
 			Wait(.005);
@@ -936,17 +902,17 @@ public:
 		
 		///Track Cener Basket
 		// -10000 == don't know
-		if(msgCenterBasketAngle > -6000)
+		if(msgCenterBasketAngle > -6000 && driverStationControl->GetDigitalIn(8))
 		{
-			rotationChange = msgCenterBasketAngle/(driverStationControl->GetAnalogIn(3)*2) * 0.7;
+			rotationChange = msgCenterBasketAngle / 10.0;
 			
-			if(msgCenterBasketAngle > .05 && rotationChange < 0.15)
+			if( rotationChange < 100.0 && rotationChange > .015)
 			{
-				rotationChange = 0.1;
+				rotationChange = 0.125;
 			}
-			else if(msgCenterBasketAngle < -.05 && rotationChange > -0.15)
+			else if( rotationChange > -100.0 && rotationChange < -.015)
 			{
-				rotationChange = -0.1;
+				rotationChange = -0.125;
 			}
 			bBallRotationLocation = encoderTurretRotation->Get();
 		}
@@ -954,14 +920,10 @@ public:
 
 		if(fabs(xboxShoot->GetRightX()) > .2)
 		{
-			rotationChange = xboxShoot->GetRightX() / 1.3;
+			rotationChange = xboxShoot->GetRightX();
 			bBallRotationLocation = encoderTurretRotation->Get();			
 		}
-		else
-		{
-//			bBallRotation = rotationChange;
-		}
-		// If rotation is too high, will SAY NO!
+
 		if(encoderTurretRotation->Get() > TURRET_ROTATION_TICKS && bBallRotationLocation > 0.0){
 			rotationChange = 0.0;
 		}
@@ -971,8 +933,8 @@ public:
 		}
 
 		bBallRotator->Set(rotationChange);
-		
-		
+
+
 		//---------------------------------------------Tilt--------------------------------
 
 		float tiltChange = PIDTiltReading->CalculateChange(TiltReadingSmoothed->NewValue(tilt->GetVoltage()),bBallAngle);
@@ -1152,11 +1114,11 @@ public:
 
 		while (IsOperatorControl())
 		{
-			//If no button is pushed manual angle an wheel speed
+			//If no button is pushed manual angle and wheel speed
 			if(!xboxDrive->GetB() && !xboxDrive->GetX())
 			{
-				bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*1300/5;
-				bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*1300/5;
+				bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*100.0;
+				bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*100.0;
 			}
 			//if B on drive stick shoot from freethrow line
 			else if(xboxDrive->GetB())
@@ -1168,9 +1130,9 @@ public:
 			//if X on drive stick shoot from side of our bridge
 			else if(xboxDrive->GetX())
 			{
-				bBallAngle = 1.96;
-				bBallTopWheelSpeed = 400.0;
-				bBallBottomWheelSpeed = 1340.0;
+				bBallAngle = 2.04;
+				bBallTopWheelSpeed = 915.0;
+				bBallBottomWheelSpeed = 1300.0;
 			}
 			
 			greenLightControl->SetRaw(255);
@@ -1203,10 +1165,7 @@ public:
 
 			
 			// log once in a while, not every time
-			if(loopCount % 50 == 0)
-			{
-				Debug();
-			}
+			Debug();
 
 			loopCount++;
 			Wait(0.005);
@@ -1256,9 +1215,9 @@ public:
 //		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " message :%f", msgCenterBasketAngle);
 		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, "SWco,to,bo: %d, %d, %d", testCompressor->Get(), bBallElevatorTopLimit->Get(), bBallElevatorBottomLimit->Get());
 		
-		printf("top wheel %f", TopShooterSmoothed->Get());
-		printf("bottom wheel %f \n", BottomShooterSmoothed->Get());
-		
+		printf("top %f", TopShooterSmoothed->Get());
+		printf(" bottom %f ", BottomShooterSmoothed->Get());
+		printf(" basket %f \n", msgCenterBasketAngle);
 		dsLCD->UpdateLCD();
 	}
 
