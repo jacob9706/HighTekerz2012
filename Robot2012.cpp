@@ -398,25 +398,15 @@ public:
 		UINT32 loadSecondBallWait = 0;
 		UINT32 timer = 0;
 		UINT32 elapsedTime = 0;
-		UINT32 loadBallWait = 0;
 		
 		int state = 0;
 		
 		//Auto one steps
-		bool startCycle = true;
 		bool shotFirstBall = false;
 		bool shotSecondBall = false;
 		bool drivenToBridge = false;
 		bool shooting = false;
 		bool autoDone = false;
-		bool backedUp = false;
-		bool ballLoaded = true;
-		
-		float
-		calculatedBottom = 0,
-		calculatedTop = 0,
-		// To keep in range just in case
-		calculatedAngle = 2.0;
 
 		bBallAngle = 2.0;
 		bBallBottomWheelSpeed = 0.0;
@@ -425,150 +415,12 @@ public:
 
 		while(IsAutonomous() && IsEnabled())
 		{
-//			dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, "top wheel %f", TopShooterSmoothed->Get());
-//			dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, "bottom wheel %f", BottomShooterSmoothed->Get());
-			
-
-			/* this is the section for 1
-			 * turn OFF 
-			 * 1
+			/*
+			 * ========================= Select 1 ==============================
+			 * 
+			 * Shoot Twice
 			 */
-			
 			if(!driverStationControl->GetDigitalIn(1))
-			{
-				bBallAngle = 2.0816; 
-
-				//Set Wheel Speeds to full   
-				bBallTopWheelSpeed=800;
-				bBallBottomWheelSpeed=1300;
-
-				//ramp arm down
-				if(robotRampArm->IsRampUp)
-				{
-					robotRampArm->PeriodicSystem(true);
-				}
-
-				if(startCycle)
-				{
-					//TODO:Wait 10 cycles
-					if( BottomShooterSmoothed->Get() > 1050)
-					{
-						//Shoot
-						shooterArm->Set(true);
-
-						if(waitForArmFirstShot == 0)
-						{
-							waitForArmFirstShot = GetFPGATime();
-						}
-					}
-
-					if(GetFPGATime() - waitForArmFirstShot > 5000000)
-					{
-						shooterArm->Set(false);
-						shotFirstBall = true;
-						startCycle = false;
-					}
-				}
-				//drive to bridge
-				if(shotFirstBall && myRobot->PositionY() < 71.0)
-				{
-					myRobot->Periodic((driverStationControl->GetAnalogIn(4)/5), (driverStationControl->GetAnalogIn(4)/5), true);
-					bBallAngle = 2.0;
-					bBallBottomWheelSpeed = 1100.0;
-					bBallTopWheelSpeed = 270.0;
-					bBallElevatorTop->Set(Relay::kOn);
-					bBallElevatorTop->Set(Relay::kReverse);
-				}
-
-				//reached bridge
-				else
-				{
-					bBallElevatorTop->Set(Relay::kOff);
-					myRobot->Periodic(0.0, 0.0, true);
-				}
-				if(myRobot->PositionY() >= 71.0)
-				{
-					drivenToBridge = true;
-				}
-				if(drivenToBridge)
-				{
-					shooterArm->Set(true);
-				}
-			}
-
-			
-			/* this is the section for 2
-			 * turn OFF 
-			 * 2
-			 */
-
-			//Freethrow Line
-			if(!driverStationControl->GetDigitalIn(2))
-			{
-				bBallAngle = 2.04; 
-				bBallTopWheelSpeed = 170.0;
-				bBallBottomWheelSpeed = 1080.0;
-				shooterWheelState = true;
-
-				if(wheelSpinupStart == 0)
-				{
-					wheelSpinupStart = GetFPGATime();
-				}
-				//wait for time
-				if(GetFPGATime() - wheelSpinupStart < 6000000)
-				{
-					// wait for go time
-				}
-				else
-				{
-					if(waitForArmFirstShot == 0)
-					{
-						shooting = true;
-						shooterArm->Set(true);
-						waitForArmFirstShot = GetFPGATime();
-					}
-					if(GetFPGATime() - waitForArmFirstShot > 500000)
-					{
-						shooterArm->Set(false);
-						shooting = false;
-						shotFirstBall = true;
-						startCycle = false;
-
-					}
-					if(shotFirstBall)
-					{
-						//set elevator up
-						bBallElevatorTop->Set(Relay::kOn);
-						bBallElevatorTop->Set(Relay::kReverse);
-
-						if(loadSecondBallWait == 0)
-						{
-							loadSecondBallWait = GetFPGATime();
-						}
-						if(GetFPGATime() - loadSecondBallWait < 5000000)
-						{
-							
-						}
-						else if(GetFPGATime() - loadSecondBallWait < 5500000)
-						{
-							bBallElevatorTop->Set(Relay::kOff);
-							shooting = true;
-							shooterArm->Set(true);
-						}
-						else
-						{
-							shooting = false;
-							shooterArm->Set(false);
-						}
-					}
-				}
-			}
-			
-			
-			
-			
-			//Freethrow Line 2 (switch 3)
-			if(!driverStationControl->GetDigitalIn(3))
 			{
 				myRobot->Periodic(0.0, 0.0, true);
 				bBallAngle = 2.06;
@@ -623,7 +475,7 @@ public:
 			}
 
 			/*
-			 * ========================= Select 4 ==============================
+			 * ========================= Select 2 ==============================
 			 * 
 			 * Drive to bridge
 			 * Lower Bridge
@@ -631,7 +483,7 @@ public:
 			 * Shoot twice
 			 */
 			
-			if(!driverStationControl->GetDigitalIn(4))
+			else if(!driverStationControl->GetDigitalIn(2))
 			{
 				
 				//set angle to make it from top of key
@@ -737,123 +589,9 @@ public:
 				OpShooter(false);
 			}
 			
-			
-			
-			
-			/*
-			 * ========================= Select 5 ==============================
-			 * 
-			 * Drive to bridge and shoot on the way
-			 * Lower Bridge
-			 * Drive back
-			 * Shoot again
-			 */
-			
-			if(!driverStationControl->GetDigitalIn(5)){
-				/*
-				 * VERY Rough calculation of wheel speeds 
-				 * could not find direct correlation between
-				 * distance and wheel speed
-				 * 
-				 * 194.5 = initial position from basket)
-				 */
-				calculatedAngle = (myRobot->PositionY() + 194.5) / 102;
-				calculatedTop = (myRobot->PositionY() + 194.5) * 1.48;
-				calculatedBottom = (myRobot->PositionY() + 194.5) * 6.19;
-				
-				bBallAngle = calculatedAngle;
-				bBallTopWheelSpeed = calculatedTop;
-				bBallBottomWheelSpeed = calculatedBottom;
-				
-				//Turn on shooter wheels
-				shooterWheelState = true;
-
-				//Follow Turret
-				processVSPMessage();				
-
-				//Ramp arm down
-				if(robotRampArm->IsRampUp && !autoDone)
-				{
-					robotRampArm->PeriodicSystem(true);
-				}
-				
-				
-				//Shoot first ball on the way
-				if(!shotFirstBall){
-					//Check if wheels are at right speed for position
-					if(BottomShooterSmoothed->Get() >= calculatedBottom - 20 &&
-							TopShooterSmoothed->Get() >= calculatedTop -20 && 
-							(calculatedAngle > tilt->GetVoltage() - 0.08 && 
-									calculatedAngle < tilt->GetVoltage() + 0.08
-							)
-					)
-					{
-						OpShooter(true);
-						shotFirstBall = true;
-						ballLoaded = false;
-					}
-					else{
-						OpShooter(false);
-					}
-				}
-				
-				if(!ballLoaded){
-					bBallElevatorTop->Set(Relay::kOn);
-					bBallElevatorTop->Set(Relay::kReverse);
-
-					if(loadBallWait == 0)
-					{
-						loadBallWait = GetFPGATime();
-					}
-					if(GetFPGATime() - loadBallWait > 4000000)
-					{
-						loadBallWait = 0;
-						ballLoaded = true;
-					}
-				}
-				
-				//Drive to bridge
-				if(!drivenToBridge){
-					if(myRobot->PositionY() < 60){
-						myRobot->Periodic(-(driverStationControl->GetAnalogIn(4)/5), -(driverStationControl->GetAnalogIn(4)/5), true);
-					}
-					else{
-						myRobot->Periodic(0.0, 0.0, true);
-						drivenToBridge = true;
-					}
-				}
-				
-				//Got to bridge, now backup
-				if(drivenToBridge){
-					if(myRobot->PositionY() > 50){
-						myRobot->Periodic((driverStationControl->GetAnalogIn(4)/5), (driverStationControl->GetAnalogIn(4)/5), true);
-					}
-					else{
-						myRobot->Periodic(0.0, 0.0, true);
-						backedUp = true;
-					}
-				}
-				
-				//Backed up, now shoot again
-				if(backedUp && shotFirstBall && !shotSecondBall && ballLoaded){
-					OpShooter(true);
-					shotSecondBall = true;
-					autoDone = true;
-				}
-				
-				if(autoDone){
-					if(!robotRampArm->IsRampUp && autoDone)
-					{
-						robotRampArm->PeriodicSystem(true);
-					}
-				}
-				
-			}
-
-
 
 			/*
-			 * ========================= Select 6 ==============================
+			 * ========================= Select 3 ==============================
 			 * 
 			 * Drive to bridge
 			 * Lower bridge
@@ -862,7 +600,7 @@ public:
 			 * Raise Arm
 			 */
 			
-			if(!driverStationControl->GetDigitalIn(6))
+			else if(!driverStationControl->GetDigitalIn(3))
 			{
 				//set angle to make it from the bridge
 				bBallAngle = 2.01;
