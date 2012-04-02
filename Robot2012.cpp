@@ -653,9 +653,20 @@ public:
 				//drive to bridge
 				if(state == 1)
 				{
-					if(myRobot->PositionY() < 60.0)
+					if(myRobot->PositionY() < 30.0)
 					{
-						myRobot->Periodic(-(driverStationControl->GetAnalogIn(4)/5.), -(driverStationControl->GetAnalogIn(4)/5.), true);
+						myRobot->Periodic(-1.0, -1.0, true);
+					}
+					else
+					{
+						state++;
+					}
+				}
+				if(state == 2)
+				{
+					if(myRobot->PositionY() < 58.0)
+					{
+						myRobot->Periodic(-0.77, -0.77, true);
 					}
 					else
 					{
@@ -663,7 +674,7 @@ public:
 					}
 				}
 				//wait
-				if(state == 2)
+				if(state == 3)
 				{
 					if(timer == 0)
 					{
@@ -680,11 +691,11 @@ public:
 					}
 				}
 				//drive back
-				if(state == 3)
+				if(state == 4)
 				{
-					if(myRobot->PositionY() >= 0.0)
+					if(myRobot->PositionY() >= 5.0)
 					{
-						myRobot->Periodic((driverStationControl->GetAnalogIn(4)/5.), (driverStationControl->GetAnalogIn(4)/5.), true);
+						myRobot->Periodic(0.8, 0.8, true);
 					}
 					else
 					{
@@ -692,7 +703,7 @@ public:
 					}
 				}
 				//shoot
-				if(state == 4)
+				if(state == 5)
 				{
 					myRobot->Periodic(0.0, 0.0, true);
 					if(timer == 0)
@@ -712,11 +723,11 @@ public:
 						robotElevator->PeriodicSystem(true);
 						robotRampArm->PeriodicSystem(true);
 					}
-					else if(elapsedTime < 5000000)
+					else if(elapsedTime < 7000000)
 					{
 						//wait
 					}
-					else if(elapsedTime < 5100000)
+					else if(elapsedTime < 7100000)
 					{
 						OpShooter(true);
 					}
@@ -1216,7 +1227,7 @@ public:
 
 		rampArm->Set(false);
 		robotElevator->ManualFreezeAll();
-		shooterWheelState = false;
+		shooterWheelState = true;
 		
 		//bBallBottomWheelSpeed var
 		bBallAngle = 2.0;
@@ -1225,26 +1236,43 @@ public:
 		while (IsOperatorControl())
 		{
 			//If no button is pushed manual angle and wheel speed
-			if(!xboxDrive->GetB() && !xboxDrive->GetX())
+
+			//a is balance
+			if(xboxDrive->GetA())
 			{
-				bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*1000.0;
-				bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*1000.0;
+				bBallAngle = 2.0; 
+				bBallTopWheelSpeed = 787.0;
+				bBallBottomWheelSpeed = 1300.0;
 			}
-			//if B on drive stick shoot from freethrow line
+			//b is key
 			else if(xboxDrive->GetB())
 			{
-				bBallAngle = 2.04; 
+				bBallAngle = 2.06;
 				bBallTopWheelSpeed = 170.0;
 				bBallBottomWheelSpeed = 1080.0;
 			}
-			//if X on drive stick shoot from side of our bridge
+			//x is alley/bridge
 			else if(xboxDrive->GetX())
 			{
 				bBallAngle = 2.04;
-				bBallTopWheelSpeed = 915.0;
+				bBallTopWheelSpeed = 984.0;
 				bBallBottomWheelSpeed = 1300.0;
 			}
-			
+			// y is cross court
+			else if(xboxDrive->GetY())
+			{
+				bBallAngle = 2.01;
+				bBallTopWheelSpeed = 1300.0;
+				bBallBottomWheelSpeed = 1300.0;
+			}
+
+			// manual control in case we need it later
+//			if(!xboxDrive->GetB() && !xboxDrive->GetX())
+//			{
+//				bBallTopWheelSpeed = driverStationControl->GetAnalogIn(1)*1000.0;
+//				bBallBottomWheelSpeed = driverStationControl->GetAnalogIn(2)*1000.0;
+//			}
+
 			greenLightControl->SetRaw(255);
 
 			//Robot Server///////////
@@ -1318,12 +1346,13 @@ public:
 		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tlt,rot: %f, %i", tilt->GetVoltage(),encoderTurretRotation->Get());
 		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, "top wheel %f", TopShooterSmoothed->Get());
 		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, "bottom wheel %f", BottomShooterSmoothed->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, "XYH: %f, %f, %f", myRobot->PositionX(), myRobot->PositionY(), myRobot->Heading());
 
 		//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " top: %f", PIDTopWheel->CurrentMotorValue );
 		
 //		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " bot0 :%f", PIDBottomWheel->CurrentMotorValue);
 //		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " message :%f", msgCenterBasketAngle);
-		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, "SWco,to,bo: %d, %d, %d", testCompressor->Get(), bBallElevatorTopLimit->Get(), bBallElevatorBottomLimit->Get());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, "SWco,to,bo: %d, %d, %d", testCompressor->Get(), bBallElevatorTopLimit->Get(), bBallElevatorBottomLimit->Get());
 		
 		printf("top %f", TopShooterSmoothed->Get());
 		printf(" bottom %f ", BottomShooterSmoothed->Get());
