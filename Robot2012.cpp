@@ -458,16 +458,13 @@ public:
 				else if(elapsedTime < 13000000)
 				{
 					//set elevator up
-					bBallElevatorTop->Set(Relay::kOn);
-					bBallElevatorTop->Set(Relay::kReverse);
-					
+					robotElevator->PeriodicSystem(true);
 					shooting = false;
 					shooterArm->Set(false);
 				}
 				//shoot again
 				else if(elapsedTime < 13500000)
 				{
-					bBallElevatorTop->Set(Relay::kOff);
 					shooting = true;
 					shooterArm->Set(true);
 				}
@@ -477,6 +474,8 @@ public:
 					shooting = false;
 					shooterArm->Set(false);
 				}
+				
+				robotElevator->PeriodicSystem(false);
 			}
 
 			/*
@@ -492,7 +491,7 @@ public:
 			{
 				
 				//set angle to make it from top of key
-				bBallAngle = 2.04;
+				bBallAngle = 2.1;
 
 				//Set Wheel Speeds to make it from the bridge    
 				bBallTopWheelSpeed = 400.0;
@@ -515,6 +514,10 @@ public:
 					{
 						myRobot->Periodic(-1.0, -1.0, true);
 					}
+					else if(myRobot->PositionY() < 67.0)
+					{
+						myRobot->Periodic(-0.97, -0.97, true);
+					}
 					else
 					{
 						state++;
@@ -523,7 +526,7 @@ public:
 				if(state == 2)
 				{
 //					if(myRobot->PositionY() < 58.0)
-					if(myRobot->PositionY() < 90.0)
+					if(myRobot->PositionY() < 84.0)
 					{
 						myRobot->Periodic(-0.77, -0.77, true);
 					}
@@ -554,7 +557,7 @@ public:
 				{
 					if(myRobot->PositionY() >= 5.0)
 					{
-						myRobot->Periodic(0.81, 0.81, true);
+						myRobot->Periodic(0.83, 0.83, true);
 					}
 					else
 					{
@@ -582,11 +585,11 @@ public:
 						robotElevator->PeriodicSystem(true);
 						robotRampArm->PeriodicSystem(true);
 					}
-					else if(elapsedTime < 7000000)
+					else if(elapsedTime < 6500000)
 					{
 						//wait
 					}
-					else if(elapsedTime < 7100000)
+					else if(elapsedTime < 6600000)
 					{
 						OpShooter(true);
 					}
