@@ -175,9 +175,11 @@ class Robot2012 : public SimpleRobot
 	msgRightBasketAngle,
 	msgCenterBasketAngle,
 	msgLeftBasketAngle;
-
+	
 	bool shooterWheelState;
 	bool shooting;
+	
+	float speedAdjust;
 	
 	// global current wheel speed
 	float bBallTopWheelSpeed,
@@ -213,9 +215,10 @@ public:
 		bBallShooterBottom = new Victor(2, 1);
 		shooterArm = new Solenoid(1);
 		encoderTurretRotation = new Encoder(2, 3, 2, 4);
-		encoderShooterTop = new Encoder(2, 5, 2, 6, false, Encoder::k1X);
-		encoderShooterBottom = new Encoder(2, 7, 2, 8, false, Encoder::k1X);
-
+		encoderShooterTop = new Encoder(2, 5, 2, 6, true, Encoder::k1X);
+//		encoderShooterBottom = new Encoder(2, 7, 2, 8, false, Encoder::k1X);
+		encoderShooterBottom = new Encoder(1, 6, 1, 5, true, Encoder::k1X);
+		
 		tilt = new AnalogChannel(1);
 
 		encoderTurretRotation->Start();
@@ -302,11 +305,13 @@ public:
 	void SetupRobot()
 	{
 		// On robot //
-		encoderWheelsLeft = new Encoder(1, 1, 1, 2, true);
-		encoderWheelsRight = new Encoder(1, 3, 1, 4, false);
+		encoderWheelsLeft = new Encoder(1, 3, 1, 4, true);
+		encoderWheelsRight = new Encoder(1, 1, 1, 2, false);
 		encoderWheelsLeft->Start();
 		encoderWheelsRight->Start();
 		// Drive System /////////////////////
+		// Adjust speed of drive
+		speedAdjust = 1.0;
 		myRobot = new Drivetrain(3, 4, 1, 2, encoderWheelsLeft, encoderWheelsRight); // create robot drive base
 		// other
 		// Air
@@ -423,7 +428,7 @@ public:
 			if(!driverStationControl->GetDigitalIn(1))
 			{
 				myRobot->Periodic(0.0, 0.0, true);
-				bBallAngle = 2.06;
+				bBallAngle = 2.12;
 				bBallTopWheelSpeed = 170.0;
 				bBallBottomWheelSpeed = 1080.0;
 				
@@ -505,7 +510,8 @@ public:
 				//drive to bridge
 				if(state == 1)
 				{
-					if(myRobot->PositionY() < 30.0)
+//					if(myRobot->PositionY() < 30.0)
+					if(myRobot->PositionY() < 60.0)
 					{
 						myRobot->Periodic(-1.0, -1.0, true);
 					}
@@ -516,7 +522,8 @@ public:
 				}
 				if(state == 2)
 				{
-					if(myRobot->PositionY() < 58.0)
+//					if(myRobot->PositionY() < 58.0)
+					if(myRobot->PositionY() < 90.0)
 					{
 						myRobot->Periodic(-0.77, -0.77, true);
 					}
@@ -547,7 +554,7 @@ public:
 				{
 					if(myRobot->PositionY() >= 5.0)
 					{
-						myRobot->Periodic(0.8, 0.8, true);
+						myRobot->Periodic(0.81, 0.81, true);
 					}
 					else
 					{
@@ -600,7 +607,7 @@ public:
 			 * Raise Arm
 			 */
 			
-			else if(!driverStationControl->GetDigitalIn(3))
+			/*else if(!driverStationControl->GetDigitalIn(3))
 			{
 				//set angle to make it from the bridge
 				bBallAngle = 2.01;
@@ -700,7 +707,7 @@ public:
 						}
 					}
 				}
-			}
+			}*/
 
 			driverStationControl->SetDigitalOut(3, shotSecondBall);
 			OpTurret(false);
@@ -761,17 +768,22 @@ public:
 		
 		///Track Cener Basket
 		// -10000 == don't know
+		
+		
 		if(msgCenterBasketAngle > -6000 && driverStationControl->GetDigitalIn(8))
 		{
 			rotationChange = msgCenterBasketAngle / 10.0;
 			
+			// Offset Slider
+			rotationChange += (driverStationControl->GetAnalogIn(3) - 2.5) * .04;
+			
 			if( rotationChange < 100.0 && rotationChange > .015)
 			{
-				rotationChange = 0.125;
+				rotationChange = 0.138;
 			}
 			else if( rotationChange > -100.0 && rotationChange < -.015)
 			{
-				rotationChange = -0.125;
+				rotationChange = -0.13;
 			}
 			bBallRotationLocation = encoderTurretRotation->Get();
 		}
@@ -933,14 +945,21 @@ public:
 	{
 		// Drive //////////////////////////////
 		//        float speedAdjust = (driverStationControl->In(4) / 5);
-		float speedAdjust = 1.0;
+		if(xboxDrive->GetRB())
+		{
+			speedAdjust = 1.0;
+		}
+		else if (xboxDrive->GetLB())
+		{
+			speedAdjust = 0.8;
+		}
 		myRobot->Periodic(xboxDrive->GetLeftY() * speedAdjust, xboxDrive->GetRightY() * speedAdjust, false, // don't use the encoder adjustment now
 				xboxDrive->GetA()); // check for stop system!!
 		// collector ///////////////////////////////
-		if(xboxDrive->GetLB() || xboxDrive->GetLeftTrigger() > .1){
+		if(xboxDrive->GetLeftTrigger() > .1){
 			bBallCollector->Set(-1.0);
 		}else
-			if((xboxDrive->GetRB() || xboxDrive->GetRightTrigger() < -.1) && !robotElevator->IsRunning){
+			if((xboxDrive->GetRightTrigger() < -.1) && !robotElevator->IsRunning){
 				bBallCollector->Set(1.0);
 			}else{
 				bBallCollector->Set(0.0);
@@ -985,7 +1004,7 @@ public:
 			//b is key
 			else if(xboxDrive->GetB())
 			{
-				bBallAngle = 2.06;
+				bBallAngle = 2.14;
 				bBallTopWheelSpeed = 170.0;
 				bBallBottomWheelSpeed = 1080.0;
 			}
@@ -1079,22 +1098,24 @@ public:
 		}
 		dsLCD->Clear();
 		//msgCenterBasketAngle
-		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, " l,rWheel: %i, %i", myRobot->leftCount, myRobot->rightCount);
-		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, " t,bWheel: %i, %i", encoderShooterTop->Get(), encoderShooterBottom->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, " tlt,rot: %f, %i", tilt->GetVoltage(),encoderTurretRotation->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, "top wheel %f", TopShooterSmoothed->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, "bottom wheel %f", BottomShooterSmoothed->Get());
-		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, "XYH: %f, %f, %f", myRobot->PositionX(), myRobot->PositionY(), myRobot->Heading());
+		dsLCD->Printf(DriverStationLCD::kUser_Line1, 1, "L:%i, R:%i", myRobot->leftCount, myRobot->rightCount);
+		dsLCD->Printf(DriverStationLCD::kUser_Line2, 1, "T:%i, B:%i", encoderShooterTop->Get(), encoderShooterBottom->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line3, 1, "T:%f, B:%f", TopShooterSmoothed->Get(), BottomShooterSmoothed->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, " tlt:%f, rot:%i", tilt->GetVoltage(),encoderTurretRotation->Get());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, "bottom wheel %f", BottomShooterSmoothed->Get());
+//		dsLCD->Printf(DriverStationLCD::kUser_Line4, 1, "XYH: %f, %f, %f", myRobot->PositionX(), myRobot->PositionY(), myRobot->Heading());
+		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, "SWco,to,bo: %d, %d, %d", testCompressor->Get(), bBallElevatorTopLimit->Get(), bBallElevatorBottomLimit->Get());
+		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " message :%f", msgCenterBasketAngle);
+//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 20, "q");
+		
 
-		//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " top: %f", PIDTopWheel->CurrentMotorValue );
+//		dsLCD->Printf(DriverStationLCD::kUser_Line5, 1, " top: %f", PIDTopWheel->CurrentMotorValue );
 		
 //		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " bot0 :%f", PIDBottomWheel->CurrentMotorValue);
-//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, " message :%f", msgCenterBasketAngle);
-//		dsLCD->Printf(DriverStationLCD::kUser_Line6, 1, "SWco,to,bo: %d, %d, %d", testCompressor->Get(), bBallElevatorTopLimit->Get(), bBallElevatorBottomLimit->Get());
 		
-		printf("top %f", TopShooterSmoothed->Get());
-		printf(" bottom %f ", BottomShooterSmoothed->Get());
-		printf(" basket %f \n", msgCenterBasketAngle);
+//		printf("top %f", TopShooterSmoothed->Get());
+//		printf(" bottom %f ", BottomShooterSmoothed->Get());
+//		printf(" basket %f \n", msgCenterBasketAngle);
 		dsLCD->UpdateLCD();
 	}
 
