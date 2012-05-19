@@ -8,19 +8,22 @@ ElevatorSystem::ElevatorSystem(Relay* lowerElevatorMotor,
 		DigitalInput* upperLimitSwitch)
 {
 	_lowerElevatorMotor = lowerElevatorMotor;
-	_lowerLimitSwitch = lowerLimitSwitch;
+	_lowerLimitSwitchOpen = lowerLimitSwitch;
 	_upperElevatorMotor = upperElevatorMotor;
-	_upperLimitSwitch = upperLimitSwitch;
+	_upperLimitSwitchOpen = upperLimitSwitch;
 	
 	IsRunning = false;	
 	elevatorUp = false;
 	elevatorDown = false;
-	timeStart = 601.0;
+	timeStart = 1001.0;
+	
+	limitReachedLowerBottom = !_lowerLimitSwitchOpen->Get();
+	limitReachedLowerTop = !_upperLimitSwitchOpen->Get();
 }
 
 ElevatorSystem::~ElevatorSystem()
 {
-	
+
 }
 
 void ElevatorSystem::PeriodicSystem(bool startElevator)
@@ -34,7 +37,7 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 	}
 
 	// timer for the upper motor (terrible dependancy on loop length of teleop
-	if (timeStart < 500)
+	if (timeStart < 1000)
 	{
 		// start top el
 		_upperElevatorMotor->Set(Relay::kOn);
@@ -53,7 +56,7 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 		_lowerElevatorMotor->Set(Relay::kOn);
 		_lowerElevatorMotor->Set(Relay::kForward);
 
-		if (!_lowerLimitSwitch->Get())  // bottom switch clicked
+		if (!_lowerLimitSwitchOpen->Get())  // bottom switch clicked
 		{
 			elevatorDown = false;
 
@@ -69,14 +72,32 @@ void ElevatorSystem::PeriodicSystem(bool startElevator)
 		_lowerElevatorMotor->Set(Relay::kReverse);
 
 		// if top limit clicked
-		if (!_upperLimitSwitch->Get())
+		if (!_upperLimitSwitchOpen->Get())
 		{
 			//stop bottom el
-			
+
 			_lowerElevatorMotor->Set(Relay::kOff);
 
 			elevatorUp = false;
 			elevatorDown = true;
 		}
 	}
+	
+	if (limitReachedLowerBottom)
+	{
+		
+	}
+	
+	
+}
+
+void ElevatorSystem::ManualFreezeAll()
+{
+	_lowerElevatorMotor->Set(Relay::kOff);
+	_upperElevatorMotor->Set(Relay::kOff);
+
+	IsRunning = false;	
+	elevatorUp = false;
+	elevatorDown = false;
+	timeStart = 1001.0;
 }
